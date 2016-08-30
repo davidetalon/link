@@ -34,7 +34,10 @@ const static int SERVER_SEARCH_TIME = 15;
 const static int MAX_NUMBER_SERVERS = 128;
 
 
-const static char VALID_SERVER_ON[] = "SRVON:";
+const static char VALID_SERVER_ON[] = "LINKAPP:SRVON:";
+const static char VALID_CLIENT_REQUEST = "LINKAPP:CLNTRQT:SRVON?";
+
+/**************************/
 
 struct srv {
 	char name[35];
@@ -53,6 +56,7 @@ int sendbroadcast (int srvSocket, const sockaddr_in *clntSockAddr, const int *cl
 	}
 
 	char buffer[SERVICE_BUFFER_SIZE];
+	memset(buffer, VALID_CLIENT_REQUEST, 22);
 
 	if( sendto(srvSocket, buffer, sizeof(buffer), 0, (struct sockaddr *) &srvSockAddr, &srvSockAddrLen) < 0) {
 		perror("\nCannot send broadcast message: ");
@@ -85,7 +89,7 @@ int srvsInNet(int const udpClntSock, const struct sockaddr_in udpClntSockAddr, c
 		}
 
 		//checking received message
-		if (strncmp(buffer, VALID_SERVER_ON, 6) == 0) {
+		if (strncmp(buffer, VALID_SERVER_ON, 14) == 0) {
 			*foundSrvs[foundSrvsLen].name = buffer;
 			*foundSrvs[foundSrvsLen].sockAddr = srvAddr;
 			*foundSrvs[foundSrvsLen].SockAddrLen = sizeof(srvAddr);
