@@ -29,24 +29,100 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <netinet/in>
+#include <netinet/in.h>
 
 
 /************* APPLICATION OPTION *************/
 
-const static int UDP_CLIENT_PORT = 1234;
-const static int UDP_SERVER_PORT = 1235;
+static const int UDP_CLIENT_PORT = 1234;
+static const int UDP_SERVER_PORT = 1235;
 
-const static int TCP_CLIENT_PORT = 2345;
-const static int TCP_SERVER_PORT = 2346;
+static const int TCP_CLIENT_PORT = 2345;
+static const int TCP_SERVER_PORT = 2346;
 
 
 
-const static int SERVICE_BUFFER_SIZE = 256;
-const static char VALID_SERVER_ON[] = "LINKAPP:SRVON:";
-const static char VALID_CLIENT_REQUEST = "LINKAPP:CLNTRQT:SRVON?";
+static const int SERVICE_BUFFER_SIZE = 256;
+static const char VALID_SERVER_ON[] = "LINKAPP/SRVON:";
+static const char VALID_CLIENT_REQUEST[] = "LINKAPP/CLNTRQT/SRVON?";
 
 /*******************************************/
+
+
+int main (void) {
+
+	//server UDP address
+	struct sockaddr_in udpSrvSockAddr;
+	udpSrvSockAddr.sin_family = AF_INET;
+	udpSrvSockAddr.sin_port = htons(UDP_SERVER_PORT);
+	udpSrvSockAddr.sin_addr.s_addr = inet_addr(INADDR_ANY);
+
+	int udpSrvSockAddrLen = sizeof(udpSrvSockAddr);
+
+	//client address
+	struct sockaddr_in udpClntSockAddr;
+
+	int udpClntSockAddrLen = sizeof(udpSrvSockAddr);
+
+
+	//create UDP server socket
+	int udpSrvSock = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if (udpSrvSock < 0) {
+		perror("\nCannot create UDP server socket: ");
+		return -1;
+	}
+
+	//bind UDP server socket
+	if (bind(udpSrvSock, (struct sockaddr *) &udpSrvSockAddr, &udpClntSockAddrLen) < 0) {
+		perror("\nCannot bind UDP server socket: ");
+		return -1;
+	}
+
+	if (openUdpSrv(udpSrvSock, (struct sockaddr_in *) &udpClntSockAddr, udpClntSockAddrLen) < 0) {
+		printf("Cannot start UDP server");
+		return -1;
+	}
+
+	//server TCP address
+	struct sockaddr_in tcpSrvSockAddr;
+	tcpSrvSockAddr.sin_family = AF_INET;
+	tcpSrvSockAddr.sin_port = htons(TCP_SERVER_PORT);
+	tcpSrvSockAddr.sin_addr.s_addr = inet_addr(INADDR_ANY);
+
+	int tcpSrvSockAddrLen = sizeof(tcpSrvSockAddr);
+
+	//client TCP address
+	struct sockaddr_in tcpClntSockAddr;
+
+	int tcpClntSockAddrLen = sizeof(tcpClntSockAddr);
+
+
+	//create TCP server socket
+	int tcpSrvSock = socket (AF_INET, SOCK_STREAM, 0);
+
+	if (tcpSrvSock < 0) {
+		perror("\nCannot create TCP server socket: ");
+		return -1;
+	}
+
+	if (bind(tcpSrvSock, (struct sockaddr *) &tcpSrvSockAddr, &tcpClntSockAddrLen) < 0) {
+		perror("\nCannot bind TCP server socket: ");
+		return -1;
+	}
+
+	//create socket for connection 
+	int connectionSock;
+
+	int tcpSrvIsOpen = openTcpSrv(tcpSrvSock, (struct sockaddr_in *) &tcpSrvSockAddr, tcpSrvSockAddrLen, 
+		(struct sockaddr_in *) &tcpClntSockAddr, tcpClntSockAddrLen, &connectionSock);
+
+	//receive file from client
+	// receiveFile();
+
+	return 0;
+}
+
 
 int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, udpClntSockAddrLen) {
 
@@ -59,8 +135,8 @@ int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, 
 		bzero(buffer, SERVICE_BUFFER_SIZE);
 
 		//checking received message
-		if (recvfrom(udpSrvSock, buffer, SERVICE_BUFFER_SIZE, 0, (struct sockaddr *) &clntAddr, &clntAddrLen)) < 0) {
-			perror("\nError receiving message from sleave: ")
+		if (recvfrom(udpSrvSock, buffer, SERVICE_BUFFER_SIZE, 0, (struct sockaddr *) &udpClntSockAddr, &udpClntSockAddrLen) < 0) {
+			perror("\nError receiving message from sleave: ");
 			return -1;
 		}
 
@@ -69,7 +145,7 @@ int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, 
 			memset(buffer, VALID_SERVER_ON, 14);
 
 			//responding to sleave SRVON
-			if (sendto(udpSrvSocket, buffer, sizeof(buffer), 0, (struct sockaddr *) &udpClntSockAddr, &udpClntSockAddrLen) < 0) {
+			if (sendto(udpSrvSock, buffer, sizeof(buffer), 0, (struct sockaddr *) &udpClntSockAddr, &udpClntSockAddrLen) < 0) {
 				perror("\nCannot send SRVON to sleave: ");
 				return -1;
 			}
@@ -105,82 +181,4 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 		return 0;
 	}
 	
-}
-
-
-int main (void) {
-
-	//server UDP address
-	struct sockaddr_in udpSrvSockAddr;
-	udpSrvSockAddr.sin_family = AF_INET;
-	udpSrvSockAddr.sin_port = htons(UDP_SERVER_PORT);
-	udpSrvSockAddr.sin_addr.s_addr = inet_addr(INADDR_ANY);
-
-	udpSrvSockAddrLen = sizeof(udpSrvSockAddr);
-
-	//client address
-	struct sockaddr_in udpClntSockAddr;
-
-	udpClntSockAddrLen = sizeof(udpSrvSockAddr);
-
-
-	//create UDP server socket
-	udpSrvSock = socket(AF_INET, SOCK_DGRAM, 0);
-
-	if (udpSrvSock < 0) {
-		perror("\nCannot create UDP server socket: ");
-		return -1;
-	}
-
-	//bind UDP server socket
-	if (bind(udpSrvSock, (struct sockaddr *) &udpSrvSockAddr, &udpClntSockAddrLen) < 0) {
-		perror("\nCannot bind UDP server socket: ");
-		return -1;
-	}
-
-	if (openUdpSrv(udpSrvSock, (struct sockaddr_in *) udpClntSockAddr, udpClntSockAddrLen) < 0) {
-		printf("Cannot start UDP server");
-		return -1
-	}
-
-	//server TCP address
-	struct sockaddr_in tcpSrvSockAddr;
-	tcpSrvSockAddr.sin_family = AF_INET;
-	tcpSrvSockAddr.sin_port = htons(TCP_SERVER_PORT);
-	tcpSrvSockAddr.sin_addr.s_addr = inet_addr(INADDR_ANY);
-
-	tcpSrvSockAddrLen = sizeof(tcpSrvSockAddr);
-
-	//client TCP address
-	struct sockaddr_in tcpClntSockAddr;
-
-	tcpClntSockAddrLen = sizeof(tcpClntSockAddr);
-
-
-	//create TCP server socket
-	tcpSrvSock = socket (AF_INET, SOCK_STREAM, 0);
-
-	if (tcpSrvSock < 0) {
-		perror("\nCannot create TCP server socket: ");
-		return -1;
-	}
-
-	if (bind(tcpSrvSock, (struct sockaddr *) &tcpSrvSockAddr, &tcpClntSockAddrLen) < 0) {
-		perror("\nCannot bind TCP server socket: ");
-		return -1;
-	}
-
-	//create socket for connection 
-	int connectionSock;
-
-	int tcpSrvIsOpen = openTcpSrv(tcpSrvSock, (struct sockaddr_in *) &tcpSrvSockAddr, tcpSrvSockAddrLen, 
-		(struct sockaddr_in *) &tcpClntSockAddr, tcpClntSockAddrLen, &connectionSock);
-
-	//receive file from client
-	receiveFile();
-
-
-
-
-	return 0;
 }
