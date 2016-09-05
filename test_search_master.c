@@ -17,6 +17,8 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 
 /****************************/
@@ -29,13 +31,13 @@ static const int TCP_SERVER_PORT = 2346;
 
 
 static const int MAX_NAME_LENGTH = 50;
-static const int SERVICE_BUFFER_SIZE = 256;
-static const int SERVER_SEARCH_TIME = 15;
-static const int MAX_NUMBER_SERVERS = 128;
+static const int SERVICE_BUFFER_SIZE = 128;
+static const int SERVER_SEARCH_TIME = 5;
+static const int MAX_NUMBER_SERVERS = 8;
 
 
-static const char VALID_SERVER_ON[] = "LINKAPP/SRVON:";
-static const char VALID_CLIENT_REQUEST[] = "LINKAPP/CLNTRQT/SRVON?";
+static const char VALID_SERVER_ON[15] = "LINKAPP/SRVON/";
+static const char VALID_CLIENT_REQUEST[22] = "LINKAPP/CLNTRQT/SRVON?/";
 
 /**************************/
 
@@ -45,30 +47,39 @@ struct srv {
 	int sockAddrLen;
 };
 
+typedef struct srv srv;
+
 /************ MAIN ************/
 int main (void) {
 
 	//client UDP address
 	struct sockaddr_in udpClntSockAddr;
+	memset(&udpClntSockAddr, 0, sizeof(udpClntSockAddr));
+
 	udpClntSockAddr.sin_family = AF_INET;
 	udpClntSockAddr.sin_port = htons(UDP_CLIENT_PORT);
-	udpClntSockAddr.sin_addr.s_addr = inet_addr(INADDR_ANY);
+	udpClntSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	int udpClntSockAddrLen = sizeof(udpClntSockAddr);
+
+	//server UDP address
+	struct sockaddr_in udpSrvSockAddr;
+	memset(&udpSrvSockAddr, 0, sizeof(udpSrvSockAddr));
+	
+	udpSrvSockAddr.sin_family = AF_INET;
+	udpSrvSockAddr.sin_port = htons(UDP_SERVER_PORT);
+	udpSrvSockAddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+
+	int udpSrvSockAddrLen = sizeof(udpSrvSockAddr);
+
 
 	//client TCP address
 	struct sockaddr_in tcpClntSockAddr;
 	tcpClntSockAddr.sin_family = AF_INET;
 	tcpClntSockAddr.sin_port = htons(TCP_CLIENT_PORT);
-	tcpClntSockAddr.sin_addr.s_addr = inet_addr(INADDR_ANY);
+	tcpClntSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	int tcpClntSockAddrLen = sizeof(tcpClntSockAddr);
-
-
-	//server address
-	struct sockaddr_in udpSrvSockAddr;
-
-	int udpSrvSockAddrLen = sizeof(udpSrvSockAddr);
 
 
 	//create UDP client socket
@@ -86,31 +97,46 @@ int main (void) {
 	}
 
 	//sending broadcast message
-	int broadcasted = sendBroadcast(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen, 
-		(struct sockaddr_in *) &udpSrvSockAddr, udpSrvSockAddrLen);
+	int broadcasted = sendBroadcast(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen, (struct sockaddr *) &udpSrvSockAddr, udpSrvSockAddrLen);
 
 	if (broadcasted < 0) {
 		perror("\nCannot send broadcast message: ");
 		return -1;
 	}
 
-	//array of found servers
-	struct srv foundSrvs[MAX_NUMBER_SERVERS];
 
-	int foundSrvsLen = srvsInNet(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen, (struct srv *) &foundSrvs);
+	srv foundSrvs[MAX_NUMBER_SERVERS];
+
+	for (int i = 0; i < MAX_NUMBER_SERVERS; i++) {
+		memset(foundSrvs[i].name, 0, MAX_NAME_LENGTH);
+		foundSrvs[i].sockAddr.sin_family = 0;
+		foundSrvs[i].sockAddr.sin_port = 0;
+		foundSrvs[i].sockAddr.sin_addr.s_addr = 0;
+
+		foundSrvs[i].sockAddrLen = sizeof(srv);
+	}
+
+	// int foundSrvsLen = srvsInNet(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen, &foundSrvs);
+	int foundSrvsLen = srvsInNet(udpClntSock, &foundSrvs);
 	
 	if (foundSrvsLen < 0) {
-		printf("\nMaster research failed");
+		printf("\nMaster research failed\n");
 		return -1;
+	} else if (foundSrvsLen == 0){
+
+		printf("\n 0 Master found\n");
+
 	} else {
 
+		printf("%d masters found\n", foundSrvsLen);
 		//listing servers avaiable
 		listingSrvs((struct srv*) &foundSrvs, foundSrvsLen);
-
+		printf("\nScegliere un master valido: ");
 		int selectedServer;
+
 		scanf("%d", &selectedServer);
-		while (selectedServer < 0 || selectedServer > foundSrvs -1) {
-			printf("\nScegliere un server valido: ");
+		while (selectedServer < 0 || selectedServer > foundSrvsLen-1) {
+			printf("\nScegliere un master valido: ");
 			scanf("%d", &selectedServer);
 		}
 
@@ -128,15 +154,14 @@ int main (void) {
 
 		if (openConnection(tcpClntSock, (struct sockaddr_in *) &tcpClntSockAddr, sizeof(tcpClntSockAddr),
 		 selectedServer, (struct srv*) foundSrvs) < 0) {
-			printf("\nCannot communicate with master!");
+			printf("\nCannot communicate with master!\n");
 			return -1;
 		}
 
-		return 0;
-
 	}
 
-
+	
+	printf("\nConnection enstabilished.\n");
 
 	return 0;
 }
@@ -147,7 +172,7 @@ int main (void) {
 /************ SENDBROADCAST ************/
 
 //function for broadcasting a service messace which pourpose is to discover Link masters listening on the local network
-int sendBroadcast (int clntSock, const struct sockaddr_in *clntSockAddr, const int *clntSockAddrLen, struct sockaddr_in *srvSockAddr, int *srvSockAddrLen) {
+int sendBroadcast (int clntSock, const struct sockaddr_in *clntSockAddr, const int *clntSockAddrLen, struct sockaddr_in *srvSockAddr, int srvSockAddrLen) {
 
 	//setting socket for broadcasting
 	int broadcast = 1;
@@ -156,13 +181,13 @@ int sendBroadcast (int clntSock, const struct sockaddr_in *clntSockAddr, const i
 	}
 
 	char buffer[SERVICE_BUFFER_SIZE];
-	memset(buffer, VALID_CLIENT_REQUEST, 22);
+	strncpy(buffer, VALID_CLIENT_REQUEST, 22);
 
-	if( sendto(clntSock, buffer, sizeof(buffer), 0, (struct sockaddr *) &srvSockAddr, &srvSockAddrLen) < 0) {
-		perror("\nCannot send broadcast message: ");
+	if( sendto(clntSock, buffer, sizeof(buffer), 0, (struct sockaddr *) srvSockAddr, srvSockAddrLen) < 0) {
 		return -1;
 	}
 
+	printf("Broadcast sent: %s\n", buffer);
 	return 0;
 }
 /************ END OF SENDBROADCAST ************/
@@ -170,40 +195,65 @@ int sendBroadcast (int clntSock, const struct sockaddr_in *clntSockAddr, const i
 /************ SRVSINNET ************/
 
 //found server on the local network
-int srvsInNet(int const udpClntSock, const struct sockaddr_in udpClntSockAddr, const int *udpClntSockAddrLen, struct srv *foundSrvs) {
+int srvsInNet(const int udpClntSock, srv *srvs) {
 
+	//number of server
+	int nSrvs = 0;
+
+	struct sockaddr_in currentAddr;
+	currentAddr.sin_family = AF_INET;
+	currentAddr.sin_port = htons(UDP_SERVER_PORT);
+	currentAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	int currentAddrLen = sizeof(currentAddr);
+
+	printf("Waiting for master response...\n");
+
+	//set socket non blocking
+	fcntl(udpClntSock, F_SETFL, O_NONBLOCK);
+	int err;
+
+	//buffer created
 	char buffer[SERVICE_BUFFER_SIZE];
 
-	struct sockaddr_in srvAddr;
-	int srvAddrLen = sizeof(srvAddr);
+	int excededTime = time(0) + SERVER_SEARCH_TIME;
 
-	//time to wait until show found servers
-	unsigned int delay = time(0) + SERVER_SEARCH_TIME;
-	int foundSrvsLen = 0;
-	while (time(0) < delay) {
+	while ((nSrvs <= MAX_NUMBER_SERVERS ) && (time(0) < excededTime) ) {
 
 		//cleaning buffer
 		bzero(buffer, SERVICE_BUFFER_SIZE);
 
 		//checking received message
-		if (recvfrom(udpClntSock, buffer, SERVICE_BUFFER_SIZE, 0, (struct sockaddr *) &srvAddr, &srvAddrLen) < 0) {
-			return -1;
-		}
-		char strName[MAX_NAME_LENGTH];
+		recvfrom(udpClntSock, buffer, SERVICE_BUFFER_SIZE, 0, (struct sockaddr *) &currentAddr, &currentAddrLen);
+		err = errno;
+
+		//handle error from recvfrom
+		if ((err != EAGAIN) && (err != EWOULDBLOCK)) {
+      		printf("recv returned unrecoverable error(errno=%d)\n", err);
+      		return -1;
+      	}
+
+		char *strName;
 		//checking received message
 		if (strncmp(buffer, VALID_SERVER_ON, 14) == 0) {
+
+			//getting server name
 			strtok(buffer, "/");
-			*buffer = strtok(buffer, '/');
-			strncpy(buffer, strName, 50);
-			*foundSrvs[foundSrvsLen].name = strName;
-			foundSrvs[foundSrvsLen].sockAddr = srvAddr;
-			foundSrvs[foundSrvsLen].sockAddrLen = sizeof(srvAddr);
-			
-			foundSrvsLen = foundSrvsLen + 1;
-		}
+			strtok(NULL, "/");
+			strName = strtok(NULL, "/");
+
+			srv currentSrv;
+			strcpy(currentSrv.name, strName);
+			currentSrv.sockAddr = currentAddr;
+			currentSrv.sockAddrLen  = sizeof(currentSrv.sockAddr);
+
+			srvs[nSrvs] = currentSrv;
+			nSrvs++;
+
+		}	
 	}
 
-	return foundSrvsLen;
+	return nSrvs;
 
 }
 
@@ -215,9 +265,8 @@ int srvsInNet(int const udpClntSock, const struct sockaddr_in udpClntSockAddr, c
 //listing servers avaiable
 int listingSrvs (const struct srv *foundSrvs, int foundSrvsLen) {
 
-	printf("Found Servers:");
 	for(int i = 0; i < foundSrvsLen; i++) {
-		printf("\n%d. %s", i, toupper(*foundSrvs[i].name));
+		printf("\n%d. %s", i, foundSrvs[i].name);
 	}
 
 	return 0;
@@ -229,9 +278,11 @@ int listingSrvs (const struct srv *foundSrvs, int foundSrvsLen) {
 /************ OPENCONNECTION ************/
 
 //open connection with selected master
-int openConnection(int tcpClntSock, struct sockaddr_in *tcpClntSockAddr, int tcpClntSockAddrLen, int selectedServer, struct srv *foundSrvs) {
+int openConnection(int tcpClntSock, struct sockaddr_in *tcpClntSockAddr, int tcpClntSockAddrLen, int selectedServer, srv *foundSrvs) {
 
-	printf("Connetcting to %s...", *foundSrvs[selectedServer].name);
+	foundSrvs[selectedServer].sockAddr.sin_port = htons(TCP_SERVER_PORT);
+
+	printf("Connetcting to %s...", foundSrvs[selectedServer].name);
 	if (connect(tcpClntSock, (struct sockaddr *) &foundSrvs[selectedServer].sockAddr, foundSrvs[selectedServer].sockAddrLen) < 0) {
       perror("Cannot connect to master: ");
       return -1;
