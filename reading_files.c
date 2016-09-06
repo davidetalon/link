@@ -13,8 +13,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
-#define PERMS 0666
+#include <string.h>
 
 int main (int argc, char *argv[]) {
 
