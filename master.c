@@ -44,12 +44,17 @@ static const int TCP_SERVER_PORT = 2346;
 
 static const int SERVICE_BUFFER_SIZE = 256;
 static const int DATA_BUFFER_SIZE = 4096;
-static const int HEADER_SIZE = 328;
+static const int HEADER_SIZE = 336;
+
 static const char VALID_SERVER_ON[] = "LINKAPP/SRVON/";
 static const char VALID_CLIENT_REQUEST[] = "LINKAPP/CLNTRQT/SRVON?/";
+static const char SEND_ACCEPTED[] = "LINKAPP/SEND/ACCEPTED";
+static const char SEND_NOT_ACCEPTED[] = "LINKAPP/SEND/NOTACCEPTED";
+
 static const char NAME[] = "TalloMaster";
 
 static const int MAX_FILE_NAME_SIZE = 262;
+static const int MAX_NAME_LENGTH = 50;
 
 /*******************************************/
 
@@ -138,46 +143,74 @@ int main (void) {
 	printf("ConnectionSock: %d\n", connectionSock);
 
 	//file name of the received file
-	char fileName[MAX_FILE_NAME_SIZE];
-	memset(&fileName, 0, sizeof(fileName));
+	char *fileName;
+	fileName = (char *) malloc(MAX_FILE_NAME_SIZE);
+	// memset(fileName, 0, sizeof(fileName));
 
+
+	char *senderName;
+	senderName = (char *) malloc(MAX_NAME_LENGTH);
+
+	// char senderName[MAX_NAME_LENGTH + 1 ];
+	// memset(&senderName, 0, sizeof(senderName));
+
+	printf("file %d, nome %d\n", &fileName, &senderName);
 	//ask user to accept file
-	if (acceptFile(connectionSock, &fileName) < 0) {
+	if (acceptFile(connectionSock, &fileName, &senderName) < 0) {
 		printf("File not Accepted. \n");
 		return 0;
 	}
 
-	//receive file from client
-	// if (receiveFile(connectionSock, fileName) < 0) {
-	// 	printf("Cannot receive file.\n");
-	// 	return -1;
-	// }
+	printf("\nReceiving file %s from %s...\n", fileName, senderName);
 
+	//prova
+	// char serviceBuffer[SERVICE_BUFFER_SIZE];
+	// memset(&serviceBuffer, 0, sizeof(serviceBuffer));
+
+	// recv(connectionSock, serviceBuffer, sizeof(serviceBuffer),  0);
+
+	// printf("buffer: %s\n", serviceBuffer);
+
+
+	// receive file from client
+	if (receiveFile(connectionSock, fileName) < 0) {
+		printf("Cannot receive file.\n");
+		return -1;
+	}
+
+	close(connectionSock);
+	close(tcpSrvSock);
 	return 0;
 }
 
-int acceptFile(const int *connectionSock, char *fileName) {
+int acceptFile(const int *connectionSock, char **fileName, char **senderName) {
 
 
-	//header will be the first HEADER_SIZE chars SLVNAME/<sleave name>/FNAME/<file name.tar.gz>/
+	//header will be the first HEADER_SIZE chars LINKAPP/SLVNAME/<sleave name>/FNAME/<file name.tar.gz>/
+
+
 	//receiving filename and sender name
-
-
 	char header[HEADER_SIZE];
 
-	char *senderName;
-
+	//variables used
+	char sName[MAX_NAME_LENGTH + 1];
+	char fName[MAX_FILE_NAME_SIZE + 1];
+	
 	read(connectionSock, header, sizeof(header));
 	printf("Header: %s\n", header);
 	strtok(header, "/");
-	senderName = strtok(NULL, "/");
 	strtok(NULL, "/");
-	fileName = strtok(NULL, "/");
+	strcat(sName, strtok(NULL, "/"));
+	strcpy(*senderName, sName);
+
+	strtok(NULL, "/");
+	strcat(fName, strtok(NULL, "/"));
+	strcpy(*fileName, fName);
 
 
+	printf("Accept file %s from %s? (Y/N) ", *fileName, *senderName);
 
-	printf("Accept file %s from %s? (Y/N) ", fileName, senderName);
-	char accepted = toupper(getchar());
+	char accepted = toupper(getchar());	
 
 	if(accepted == 'Y') {
 		return 0;
@@ -186,9 +219,6 @@ int acceptFile(const int *connectionSock, char *fileName) {
 	}
 
 }
-
-
-
 
 int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, int udpClntSockAddrLen) {
 
@@ -274,32 +304,39 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 	
 }
 
-// int receiveFile (const int connection, char *fileName) {
+int receiveFile (const int *connectionSock, const char *fileName) {
 
-	// printf("Ciao");
-	// fflush(stdout);
+	char buffer[DATA_BUFFER_SIZE];
 
-	// char buffer[DATA_BUFFER_SIZE];
+	send(connectionSock, SEND_ACCEPTED, sizeof(SEND_ACCEPTED), 0);
+	printf("Server response:%s\n", SEND_ACCEPTED);
 
-	// char bufferName[5];
+	//creating service buffer for receiving file size
+	char serviceBuffer[SERVICE_BUFFER_SIZE];
+	memset(&serviceBuffer, 0, sizeof(serviceBuffer));
 
+	//receiving buffer size
+	recv(connectionSock, serviceBuffer, sizeof(serviceBuffer),  0);
+	printf("buffer: %s\n", serviceBuffer);
 
-	// //receiving fileName
-	// if (read(connection, bufferName, sizeof(bufferName)) < 0 ){
-	// 	perror("\nCannot read file Name: ");
-	// }
+	//transform buffer into a int
+	int size = atoi(serviceBuffer);
+	printf("File size to receive: %d\n", size);
 
-	// printf("%s\n", bufferName);
-	// fflush(stdout);
+	// opening file
+	FILE *fpOutput;
+	fpOutput = fopen(fileName, "w");
 
-	// //opening file
-	// FILE *fpOutput;
-	// fpOutput = fopen(fileName, "w");
+	//byte read
+	int offset = 0;
+	int n;
 
-	// // receiving message
-	// while( read(connection, buffer, sizeof(buffer)) > 0) {
-	// 	fwrite(buffer, 20, 1, fpOutput);
-	// }
+	// receiving message
+	while( n = read(connectionSock, buffer, sizeof(buffer)) > 0 && offset < size) {
+		fwrite(buffer, DATA_BUFFER_SIZE, 1, fpOutput);
+		// printf("%s", buffer);
+		offset = offset + n;
+	}
 
-	// return 0;
-// }
+	return 0;
+}
