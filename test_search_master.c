@@ -19,6 +19,8 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
 /****************************/
@@ -33,9 +35,9 @@ static const int TCP_SERVER_PORT = 2346;
 static const int MAX_NAME_LENGTH = 50;
 static const int SERVICE_BUFFER_SIZE = 128;
 static const int DATA_BUFFER_SIZE = 4096;
-static const int HEADER_SIZE = 328;
+static const int HEADER_SIZE = 336;
 
-static const int SERVER_SEARCH_TIME = 5;
+static const int SERVER_SEARCH_TIME = 1;
 static const int MAX_NUMBER_SERVERS = 8;
 
 static const int MAX_FILE_NAME_SIZE = 262;
@@ -45,6 +47,8 @@ static const char NAME[] = "TalloSleave";
 
 static const char VALID_SERVER_ON[15] = "LINKAPP/SRVON/";
 static const char VALID_CLIENT_REQUEST[22] = "LINKAPP/CLNTRQT/SRVON?/";
+static const char SEND_ACCEPTED[] = "LINKAPP/SEND/ACCEPTED";
+static const char SEND_NOT_ACCEPTED[] = "LINKAPP/SEND/NOTACCEPTED";
 
 /**************************/
 
@@ -182,20 +186,20 @@ int main (void) {
 	//ask to send file
 	if (askToSendFile(tcpClntSock, fileName) < 0 ){
 		printf("File not accepted.\n");
-		return -1;
+		
+	} else {
+
+		// sendfile
+		if(sendFile(tcpClntSock, fileName) < 0) {
+			printf("Error sendig file.\n");
+			return -1;
+		}
+
+		printf("File succefully sent.\n");
+		return 0;
 	}
 
 	close(tcpClntSock);
-
-
-	//sendfile
-	// if(sendFile() < 0) {
-	// 	printf("Error sendig file.\n");
-	// 	return -1;
-	// }
-
-	// printf("File succefully sent.\n");
-	// return 0;
 
 }
 
@@ -209,15 +213,28 @@ int askToSendFile (const int tcpClntSock, const char *fileName) {
 	char header[HEADER_SIZE];
 	memset(&header, 0, sizeof(header));
 
-	strcpy(header, "SLVNAME/");
+	strcpy(header, "LINKAPP/SLVNAME/");
 	strcat(header, NAME);
 	strcat(header, "/FNAME/");
 	strcat(header, fileName);
 	strcat(header, ".tar.gz/");
 
 	if (send(tcpClntSock, header, sizeof(header), 0) > 0 ) {
-		printf("Header sent: %s\nHeader size: %d", header, sizeof(header));
+		printf("Header sent: %s\nHeader size: %d\n", header, sizeof(header));
 	}
+
+	char buffer[SERVICE_BUFFER_SIZE];
+	memset(&buffer, 0, sizeof(buffer));
+
+	read(tcpClntSock, buffer, sizeof(buffer));
+	printf("Server response: %s\n", buffer);
+	
+	if(strcmp(buffer,SEND_ACCEPTED) != 0) {
+		return -1;
+	} 
+
+	return 0;
+
 }
 
 
@@ -350,45 +367,54 @@ int openConnection(int tcpClntSock, struct sockaddr_in *tcpClntSockAddr, int tcp
 
 /************ SENDFILE ************/
 
-//function for sending file
-// int sendFile (const int tcpClntSock, const *fileName) {
+// function for sending file
+int sendFile (const int tcpClntSock, const char *fileName) {
 
-// 	char buffer[DATA_BUFFER_SIZE];
+	char buffer[DATA_BUFFER_SIZE];
 
-// 	//opening input file
-// 	printf("Opening file...\n");
-// 	FILE *fpInput;
-// 	fpInput= fopen("Drone.tar.gz", "r");
+	//constructing file to send name
+	strcat(fileName, ".tar.gz");
 
-// 	if(fpInput == 0){
-// 		printf("Cannot read file\n");
-// 	}
+	//opening input file
+	printf("Opening file %s ...\n", fileName);
 
-// 	// fseek(fpInput, 0, SEEK_SET);
+	FILE *fpInput;
+	fpInput = fopen(fileName, "r");
 
-// 	printf("Sending file name...\n");
-// 	// sending filename
-// 	if (send(tcpClntSock, fileName, sizeof(fileName), 0) < 0) {
-// 		perror("Cannot send filename: ");
-// 		return -1;
-// 	}
+	if (fpInput == NULL) {
+		printf("Cannot read file %s", fileName);
+	}
 
-// 	// reading input file
-// 	fseek(fpInput, 0, SEEK_SET);
-// 	while (!feof(fpInput)) {
-// 		fread(buffer, DATA_BUFFER_SIZE, 1, fpInput);
+	//get file size
+	struct stat st;
+	stat(fileName, &st);
+	int size = st.st_size;
+	printf("size: %d\n", size);
+	// fseek(fpInput, 0, SEEK_SET);
 
-// 		printf("%s", buffer);
+	char serviceBuffer[SERVICE_BUFFER_SIZE];
+	sprintf(serviceBuffer, "%d", size);
+	if (send(tcpClntSock, serviceBuffer, sizeof(serviceBuffer), 0) < 0 ) {
+		perror("Errore: ");
+	}
 
-// 		// sending file using tcp connection 
-// 		if (send(tcpClntSock, buffer, sizeof(buffer), 0) < 0) {
-// 			printf("Error while sending.\n");
-// 			return -1;
-// 		}
-// 	}
 
-// 	return 0;
+	// reading input file
+	fseek(fpInput, 0, SEEK_SET);
+	while (!feof(fpInput)) {
+		fread(buffer, DATA_BUFFER_SIZE, 1, fpInput);
 
-// }
+		// printf("%s", buffer);
+
+		// sending file using tcp connection 
+		if (send(tcpClntSock, buffer, sizeof(buffer), 0) < 0) {
+			printf("Error while sending.\n");
+			return -1;
+		}
+	}
+
+	return 0;
+
+}
 /************ END OF SENDFILE ************/
 
