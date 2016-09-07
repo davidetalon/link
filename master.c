@@ -43,9 +43,13 @@ static const int TCP_SERVER_PORT = 2346;
 
 
 static const int SERVICE_BUFFER_SIZE = 256;
+static const int DATA_BUFFER_SIZE = 4096;
+static const int HEADER_SIZE = 328;
 static const char VALID_SERVER_ON[] = "LINKAPP/SRVON/";
 static const char VALID_CLIENT_REQUEST[] = "LINKAPP/CLNTRQT/SRVON?/";
-static const char NAME[] = "Tallo";
+static const char NAME[] = "TalloMaster";
+
+static const int MAX_FILE_NAME_SIZE = 262;
 
 /*******************************************/
 
@@ -124,12 +128,66 @@ int main (void) {
 	int tcpSrvIsOpen = openTcpSrv(tcpSrvSock, (struct sockaddr_in *) &tcpSrvSockAddr, tcpSrvSockAddrLen, 
 		(struct sockaddr_in *) &tcpClntSockAddr, tcpClntSockAddrLen, &connectionSock);
 
-	printf("\nConnection enstabilished.\n");
+	//verify connection
+	if(tcpSrvIsOpen < 0) {
+		printf("\nCannot enstabilist connection\n");
+	}
+
+	printf("Connection enstabilished\n");
+
+	printf("ConnectionSock: %d\n", connectionSock);
+
+	//file name of the received file
+	char fileName[MAX_FILE_NAME_SIZE];
+	memset(&fileName, 0, sizeof(fileName));
+
+	//ask user to accept file
+	if (acceptFile(connectionSock, &fileName) < 0) {
+		printf("File not Accepted. \n");
+		return 0;
+	}
+
 	//receive file from client
-	// receiveFile();
+	// if (receiveFile(connectionSock, fileName) < 0) {
+	// 	printf("Cannot receive file.\n");
+	// 	return -1;
+	// }
 
 	return 0;
 }
+
+int acceptFile(const int *connectionSock, char *fileName) {
+
+
+	//header will be the first HEADER_SIZE chars SLVNAME/<sleave name>/FNAME/<file name.tar.gz>/
+	//receiving filename and sender name
+
+
+	char header[HEADER_SIZE];
+
+	char *senderName;
+
+	read(connectionSock, header, sizeof(header));
+	printf("Header: %s\n", header);
+	strtok(header, "/");
+	senderName = strtok(NULL, "/");
+	strtok(NULL, "/");
+	fileName = strtok(NULL, "/");
+
+
+
+	printf("Accept file %s from %s? (Y/N) ", fileName, senderName);
+	char accepted = toupper(getchar());
+
+	if(accepted == 'Y') {
+		return 0;
+	} else {
+		return -1;
+	}
+
+}
+
+
 
 
 int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, int udpClntSockAddrLen) {
@@ -194,16 +252,54 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 	}
 
 	//search for a connection request
+	int request;
 	while (1) {
 
+		printf("ConnectionSock: %d\n", connectionSock);
 		//accept connection with sleave
-		connectionSock = accept(tcpSrvSock, (struct sockaddr *) &tcpClntSockAddr, &tcpClntSockAddrLen);
+		request = accept(tcpSrvSock, (struct sockaddr *) &tcpClntSockAddr, &tcpClntSockAddrLen);
+
+		printf("ConnectionSock after accept: %d\n", request);
+
+		*connectionSock = request;
+		
+		
 		if(connectionSock < 0) {
 			perror("Connection with sleave not accepted: ");
 			return -1;
 		}
 
-		return 0;
+		return 1;
 	}
 	
 }
+
+// int receiveFile (const int connection, char *fileName) {
+
+	// printf("Ciao");
+	// fflush(stdout);
+
+	// char buffer[DATA_BUFFER_SIZE];
+
+	// char bufferName[5];
+
+
+	// //receiving fileName
+	// if (read(connection, bufferName, sizeof(bufferName)) < 0 ){
+	// 	perror("\nCannot read file Name: ");
+	// }
+
+	// printf("%s\n", bufferName);
+	// fflush(stdout);
+
+	// //opening file
+	// FILE *fpOutput;
+	// fpOutput = fopen(fileName, "w");
+
+	// // receiving message
+	// while( read(connection, buffer, sizeof(buffer)) > 0) {
+	// 	fwrite(buffer, 20, 1, fpOutput);
+	// }
+
+	// return 0;
+// }
