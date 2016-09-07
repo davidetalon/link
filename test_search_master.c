@@ -32,8 +32,15 @@ static const int TCP_SERVER_PORT = 2346;
 
 static const int MAX_NAME_LENGTH = 50;
 static const int SERVICE_BUFFER_SIZE = 128;
+static const int DATA_BUFFER_SIZE = 4096;
+static const int HEADER_SIZE = 328;
+
 static const int SERVER_SEARCH_TIME = 5;
 static const int MAX_NUMBER_SERVERS = 8;
+
+static const int MAX_FILE_NAME_SIZE = 262;
+
+static const char NAME[] = "TalloSleave";
 
 
 static const char VALID_SERVER_ON[15] = "LINKAPP/SRVON/";
@@ -118,7 +125,11 @@ int main (void) {
 
 	// int foundSrvsLen = srvsInNet(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen, &foundSrvs);
 	int foundSrvsLen = srvsInNet(udpClntSock, &foundSrvs);
-	
+
+
+	//TCP client socket
+	int tcpClntSock;
+
 	if (foundSrvsLen < 0) {
 		printf("\nMaster research failed\n");
 		return -1;
@@ -141,7 +152,7 @@ int main (void) {
 		}
 
 		//open a TCP connection with server
-		int tcpClntSock = socket (AF_INET, SOCK_STREAM, 0);
+		tcpClntSock = socket (AF_INET, SOCK_STREAM, 0);
 		if (tcpClntSock < 0) {
 			perror("Cannot create TCP socket for communication: ");
 		}
@@ -156,17 +167,58 @@ int main (void) {
 		 selectedServer, (struct srv*) foundSrvs) < 0) {
 			printf("\nCannot communicate with master!\n");
 			return -1;
+		} else {
+			printf("\nConnection enstabilished.\n");
 		}
 
 	}
 
-	
-	printf("\nConnection enstabilished.\n");
+	//name of file
+	char fileName[MAX_FILE_NAME_SIZE];
+	memset(&fileName, 0, sizeof(fileName));
 
-	return 0;
+	strcpy(fileName, "Drone");
+
+	//ask to send file
+	if (askToSendFile(tcpClntSock, fileName) < 0 ){
+		printf("File not accepted.\n");
+		return -1;
+	}
+
+	close(tcpClntSock);
+
+
+	//sendfile
+	// if(sendFile() < 0) {
+	// 	printf("Error sendig file.\n");
+	// 	return -1;
+	// }
+
+	// printf("File succefully sent.\n");
+	// return 0;
+
 }
 
 /************ END OF MAIN ************/
+
+
+int askToSendFile (const int tcpClntSock, const char *fileName) {
+
+
+	//header will be the first HEADER_SIZE chars SLVNAME/<sleave name>/FNAME/<file name.tar.gz>/
+	char header[HEADER_SIZE];
+	memset(&header, 0, sizeof(header));
+
+	strcpy(header, "SLVNAME/");
+	strcat(header, NAME);
+	strcat(header, "/FNAME/");
+	strcat(header, fileName);
+	strcat(header, ".tar.gz/");
+
+	if (send(tcpClntSock, header, sizeof(header), 0) > 0 ) {
+		printf("Header sent: %s\nHeader size: %d", header, sizeof(header));
+	}
+}
 
 
 /************ SENDBROADCAST ************/
@@ -283,11 +335,60 @@ int openConnection(int tcpClntSock, struct sockaddr_in *tcpClntSockAddr, int tcp
 	foundSrvs[selectedServer].sockAddr.sin_port = htons(TCP_SERVER_PORT);
 
 	printf("Connetcting to %s...", foundSrvs[selectedServer].name);
+	
+	//verify connection enstabilished
 	if (connect(tcpClntSock, (struct sockaddr *) &foundSrvs[selectedServer].sockAddr, foundSrvs[selectedServer].sockAddrLen) < 0) {
       perror("Cannot connect to master: ");
       return -1;
-   }
+   	}
+
+   	return 0;
 
 }
 /************ END OF OPENCONNECTION ************/
+
+
+/************ SENDFILE ************/
+
+//function for sending file
+// int sendFile (const int tcpClntSock, const *fileName) {
+
+// 	char buffer[DATA_BUFFER_SIZE];
+
+// 	//opening input file
+// 	printf("Opening file...\n");
+// 	FILE *fpInput;
+// 	fpInput= fopen("Drone.tar.gz", "r");
+
+// 	if(fpInput == 0){
+// 		printf("Cannot read file\n");
+// 	}
+
+// 	// fseek(fpInput, 0, SEEK_SET);
+
+// 	printf("Sending file name...\n");
+// 	// sending filename
+// 	if (send(tcpClntSock, fileName, sizeof(fileName), 0) < 0) {
+// 		perror("Cannot send filename: ");
+// 		return -1;
+// 	}
+
+// 	// reading input file
+// 	fseek(fpInput, 0, SEEK_SET);
+// 	while (!feof(fpInput)) {
+// 		fread(buffer, DATA_BUFFER_SIZE, 1, fpInput);
+
+// 		printf("%s", buffer);
+
+// 		// sending file using tcp connection 
+// 		if (send(tcpClntSock, buffer, sizeof(buffer), 0) < 0) {
+// 			printf("Error while sending.\n");
+// 			return -1;
+// 		}
+// 	}
+
+// 	return 0;
+
+// }
+/************ END OF SENDFILE ************/
 
