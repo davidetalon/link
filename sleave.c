@@ -13,6 +13,184 @@
 #include "linkutils.h"
 #include "sleave.h"
 
+//start sleave mode
+int sleaveMode(const char *userName, const char *fileName){
+	
+	//client UDP address
+	struct sockaddr_in udpClntSockAddr;
+	memset(&udpClntSockAddr, 0, sizeof(udpClntSockAddr));
+
+	udpClntSockAddr.sin_family = AF_INET;
+	udpClntSockAddr.sin_port = htons(UDP_CLIENT_PORT);
+	udpClntSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	int udpClntSockAddrLen = sizeof(udpClntSockAddr);
+
+	//server UDP address
+	struct sockaddr_in udpSrvSockAddr;
+	memset(&udpSrvSockAddr, 0, sizeof(udpSrvSockAddr));
+	
+	udpSrvSockAddr.sin_family = AF_INET;
+	udpSrvSockAddr.sin_port = htons(UDP_SERVER_PORT);
+	udpSrvSockAddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+
+	int udpSrvSockAddrLen = sizeof(udpSrvSockAddr);
+
+
+	//client TCP address
+	struct sockaddr_in tcpClntSockAddr;
+	tcpClntSockAddr.sin_family = AF_INET;
+	tcpClntSockAddr.sin_port = htons(TCP_CLIENT_PORT);
+	tcpClntSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	int tcpClntSockAddrLen = sizeof(tcpClntSockAddr);
+
+
+	//create UDP client socket
+	int udpClntSock = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if (udpClntSock < 0) {
+		perror("\nCannot create client UDP socket: ");
+		return -1;
+	}
+
+	//binding UDP client socket
+	if (bind(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen) < 0) {
+		perror("\nCannot bind UDP client socket: ");
+		return -1;
+	}
+
+	//sending broadcast message
+	int broadcasted = sendBroadcast(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen, (struct sockaddr *) &udpSrvSockAddr, udpSrvSockAddrLen);
+
+	if (broadcasted < 0) {
+		perror("\nCannot send broadcast message: ");
+		return -1;
+	}
+
+
+	srv foundSrvs[MAX_NUMBER_SERVERS];
+
+	for (int i = 0; i < MAX_NUMBER_SERVERS; i++) {
+		memset(foundSrvs[i].name, 0, MAX_NAME_LENGTH);
+		foundSrvs[i].sockAddr.sin_family = 0;
+		foundSrvs[i].sockAddr.sin_port = 0;
+		foundSrvs[i].sockAddr.sin_addr.s_addr = 0;
+
+		foundSrvs[i].sockAddrLen = sizeof(srv);
+	}
+
+	// int foundSrvsLen = srvsInNet(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen, &foundSrvs);
+	int foundSrvsLen = srvsInNet(udpClntSock, &foundSrvs);
+
+
+	//TCP client socket
+	int tcpClntSock;
+
+	if (foundSrvsLen < 0) {
+		printf("\nMaster research failed\n");
+		return -1;
+	} else if (foundSrvsLen == 0){
+
+		printf("\n 0 Master found\n");
+
+	} else {
+
+		printf("%d masters found\n", foundSrvsLen);
+		//listing servers avaiable
+		listingSrvs((struct srv*) &foundSrvs, foundSrvsLen);
+		printf("\nScegliere un master valido: ");
+		int selectedServer;
+
+		scanf("%d", &selectedServer);
+		while (selectedServer < 0 || selectedServer > foundSrvsLen-1) {
+			printf("\nScegliere un master valido: ");
+			scanf("%d", &selectedServer);
+		}
+
+		//open a TCP connection with server
+		tcpClntSock = socket (AF_INET, SOCK_STREAM, 0);
+		if (tcpClntSock < 0) {
+			perror("Cannot create TCP socket for communication: ");
+		}
+
+		//binding TCP client socket
+		if (bind(tcpClntSock, (struct sockaddr *) &tcpClntSockAddr, tcpClntSockAddrLen) < 0) {
+			perror("\nCannot bind TCP client socket: ");
+			close(tcpClntSock);
+			return -1;
+		}
+
+		if (openConnection(tcpClntSock, (struct sockaddr_in *) &tcpClntSockAddr, sizeof(tcpClntSockAddr),
+		 selectedServer, (struct srv*) foundSrvs) < 0) {
+			printf("\nCannot communicate with master!\n");
+			close(tcpClntSock);
+			return -1;
+		} else {
+			printf("\nConnection enstabilished.\n");
+		}
+
+	}
+
+	//verify if Folder fileName exists
+	char cDir = exists (fileName, 'd');
+
+	//verify if file fileName exists
+	char cFile = exists (fileName, 'f');
+
+	//check if the file exists (the returned value from pipe)
+	if (cDir == '1' || cFile == '1' ) {
+
+		char tarCommand[TAR_COMMAND_SIZE];
+		memset(&tarCommand, 0, sizeof(char) * TAR_COMMAND_SIZE);
+
+		//invoke OS tar to compress
+		strcpy(tarCommand, "tar -zcf " );
+		strcat(tarCommand, fileName);
+		strcat(tarCommand, ".tar.gz ");
+		strcat(tarCommand, fileName);
+		system(tarCommand);
+		printf("tarCommand command: %s\n", tarCommand);
+
+	} else {
+
+		printf("File doesn't exist\n");
+		close(tcpClntSock);
+		return -1;
+
+	}
+
+	//ask to send file
+	if (askToSendFile(tcpClntSock, fileName, userName) < 0 ){
+		printf("File not accepted.\n");
+		
+	} else {
+
+		// sendfile
+		if(sendFile(tcpClntSock, fileName) < 0) {
+			printf("Error sendig file.\n");
+			close(tcpClntSock);
+			return -1;
+		}
+
+		//remove temporary file .tar.gz
+		char rmCommand[REMOVE_COMMAND_SIZE];
+		strcpy(rmCommand, "rm -r ");
+		strcat(rmCommand, fileName);
+		strcat(rmCommand, ".tar.gz");
+		system(rmCommand);
+		printf("Remove command: %s\n", rmCommand);
+
+		printf("File succefully sent.\n");
+		return 0;
+
+	}
+
+	close(tcpClntSock);
+	return 0;
+
+}
+
 //function for broadcasting a service messace which pourpose is to discover Link masters listening on the local network
 int sendBroadcast (int clntSock, const struct sockaddr_in *clntSockAddr, const int *clntSockAddrLen, struct sockaddr_in *srvSockAddr, int srvSockAddrLen) {
 
