@@ -1,6 +1,6 @@
 /**
-* @sleave.c
-* @sleave functions
+* @file sleave.c
+* @brief functions for sleave side
 *
 * @author Davide Talon (<talon.davide@gmail.com>)
 * @version 1.0
