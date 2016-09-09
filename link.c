@@ -10,6 +10,7 @@
 * @copyright Apache License, Version 2.0
 */
 
+#include <stdlib.h>
 #include "linkutils.h"
 #include "master.h"
 #include "sleave.h"
@@ -114,46 +115,46 @@ int main (int argc, char **argv) {
 	printf ("VERBOSE = %d\nLISTEN = %d\nSEND_FILE = %s\nNEWNAME = %s\nGETNAME = %d\n", arguments.verbose, 
 	  	arguments.listen, arguments.sendFile, arguments.newName, arguments.getName);
 
-	// char *bufferSettings = (char *) malloc(MAX_NAME_LENGTH);
+	char *bufferSettings = (char *) malloc(MAX_NAME_LENGTH);
 
 	// initialize userName
 	char userName[MAX_NAME_LENGTH];
 	memset(&userName, 0, sizeof(userName));
 	strcpy(userName, DEFAULT_USER_NAME);
 
-	// if (exists("$HOME/.local/share/applications/link", 'f') == 1){
+	char *linkSettingsPath[MAX_SETTINGS_PATH];
+	strcpy(linkSettingsPath, getenv("HOME"));
+	strcat(linkSettingsPath, DEFAULT_SETTINGS_PATH);
 
-	// 	FILE *settingsPointerR = fopen("$HOME/.local/share/applications/link/settings.txt", "r");
-	// 	fread(bufferSettings, sizeof(bufferSettings), 1, settingsPointerR);
-	// 	// read(settingsPointerR, bufferSettings, sizeof(bufferSettings));
 
-	// 	strcpy(userName, bufferSettings);
+	if ( exists(ABSOLUTE_DEFAULT_SETTINGS_PATH, 'f') == '1'){
 
-	// 	close(settingsPointerR);
+		FILE *settingsPointerR = fopen(linkSettingsPath, "r");
+		fread(bufferSettings, sizeof(bufferSettings), 1, settingsPointerR);
+		
+		strcpy(userName, bufferSettings);
 
-	// } else {
+		printf("READING: userName = %s, buffer = %s\n", userName, bufferSettings);
 
-	// 	char *home = getenv("HOME");
-	// 	printf("%s\n", getenv("HOME"));
-	// 	system("mkdir $HOME/.local/share/applications/link");
-	// 	FILE *settingsPointerW = fopen(".. $HOME/.local/share/applications/link/settings.txt", "w");
+		close(settingsPointerR);
 
-	// 	strcpy(bufferSettings, userName);
-	// 	fwrite(bufferSettings, sizeof(bufferSettings), 1, settingsPointerW);
-	// 	write(settingsPointerW, bufferSettings, sizeof(bufferSettings));
+	} else {
 
-	// 	close(settingsPointerW);
+		system(MAKE_SETTINGS_DIR);
 
-	// }
 
-	// free(bufferSettings);
+		FILE *settingsPointerW = fopen(linkSettingsPath, "w");
 
-	//initialize userName
-	// char userName[MAX_NAME_LENGTH];
-	// memset(&userName, 0, sizeof(userName));
-	// if()
-	// strcpy(userName, DEFAULT_USER_NAME);
+		strcpy(bufferSettings, userName);
+		printf("\nWRITING: buffer = %s, userName = %s\n", bufferSettings, userName);
+		fwrite(bufferSettings, sizeof(bufferSettings) - 1, 1, settingsPointerW);
+		// write(settingsPointerW, bufferSettings, sizeof(bufferSettings));
 
+		close(settingsPointerW);
+
+	}
+
+	free(bufferSettings);
 
 	//initialize fileName
 	char fileName[MAX_FILE_NAME_SIZE];
@@ -166,7 +167,19 @@ int main (int argc, char **argv) {
 	  		
 	  		memset(&userName, 0, sizeof(userName));
 	  		strcpy(userName, arguments.newName);
-	  		printf("New username %s set! ", userName);
+
+
+		  	FILE *settingsPointerW = fopen(linkSettingsPath, "w");
+
+			strcpy(bufferSettings, userName);
+			printf("\nWRITING: buffer = %s, userName = %s\n", bufferSettings, userName);
+			fwrite(bufferSettings, sizeof(bufferSettings) - 1, 1, settingsPointerW);
+			// write(settingsPointerW, bufferSettings, sizeof(bufferSettings));
+
+			close(settingsPointerW);
+
+
+		  	printf("New username %s set!\n", userName);
 
 	  	} else {
 	  		printf("\nName must be max %d character\n", MAX_NAME_LENGTH);
@@ -175,18 +188,19 @@ int main (int argc, char **argv) {
 
 	}
 
+	//get username
+  	if (arguments.getName == 1) {
+
+  		printf("Username:	%s\n", userName);
+  		return 0;
+
+  	}
+
 	//NOT IMPLEMENTED
   	// if (arguments.verbose == 1) {
   	// // set verbose mode
   	// }
 
-  	// if (arguments.getName == 1) {
-
-  	// 	exists (, 'f');
-
-
-
-  	// }
 
   	//send file
   	if (strcmp(arguments.sendFile, "-") != 0) {
@@ -462,10 +476,13 @@ int main (int argc, char **argv) {
 
 		printf("ConnectionSock: %d\n", connectionSock);
 
-		//file name of the received file
-		char *fileName;
-		fileName = (char *) malloc(MAX_FILE_NAME_SIZE);
-		// memset(fileName, 0, sizeof(fileName));
+		// //file name of the received file
+		char *fileToReceive;
+		fileToReceive = (char *) malloc(MAX_FILE_NAME_SIZE);
+		memset(fileToReceive, 0, sizeof(fileToReceive));
+
+		// char fileToReceive[MAX_FILE_NAME_SIZE];
+		// memset(&fileToReceive, 0, sizeof(fileToReceive));
 
 
 		char *senderName;
@@ -474,14 +491,15 @@ int main (int argc, char **argv) {
 		// char senderName[MAX_NAME_LENGTH + 1 ];
 		// memset(&senderName, 0, sizeof(senderName));
 
-		printf("file %d, nome %d\n", &fileName, &senderName);
+		// printf("file %d, nome %d\n", &fileToReceive, &senderName);
+
 		//ask user to accept file
-		if (acceptFile(connectionSock, &fileName, &senderName) < 0) {
+		if (acceptFile(connectionSock, &fileToReceive, &senderName) < 0) {
 			printf("File not Accepted. \n");
 			return 0;
 		}
 
-		printf("\nReceiving file %s from %s...\n", fileName, senderName);
+		printf("\nReceiving file %s from %s...\n", fileToReceive, senderName);
 
 		//prova
 		// char serviceBuffer[SERVICE_BUFFER_SIZE];
@@ -493,7 +511,7 @@ int main (int argc, char **argv) {
 
 
 		// receive file from client
-		if (receiveFile(connectionSock, fileName) < 0) {
+		if (receiveFile(connectionSock, fileToReceive) < 0) {
 			printf("Cannot receive file.\n");
 			return -1;
 		}
