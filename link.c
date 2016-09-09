@@ -1,6 +1,6 @@
 /**
-* @link.c
-* @application for sending files over Wifi connection
+* @file link.c
+* @brief application for sending files over Wifi connection
 *
 * @author Davide Talon (<talon.davide@gmail.com>)
 * @version 1.0
@@ -48,7 +48,20 @@ struct arguments
   char *newName;
 };
 
-/* Parse a single option. */
+
+/**
+* @brief parse arguments from command line.
+*
+* @param key an integer specifying option 
+* @param *arg a pointer to option argument
+* @param *state a pointer to parsing state (used by argp)
+* @return a static_error, 0 if no errors occours, ARGP_KEY_END if all arguments have been parsed
+*	ARGP_KEY_ARG a non-option argument, ARGP_ERR_UNKNOWN if current fey is not recognized
+*
+* @author Davide Talon (<talon.davide@gmail.com>)
+* @version 1.0
+* @since 1.0
+*/
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   /* Get the input argument from argp_parse, which we
      know is a pointer to our arguments structure. */
@@ -95,6 +108,20 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
 /* Our argp parser. */
 static struct argp argp = { options, parse_opt, args_doc, doc };
+
+
+/**
+* @brief main for link applications, it allows to send and receive file over Wifi.
+*
+* @param argc a number of arguments passed by command line.
+* @param **argv array of arguments.
+*
+* @return int, 0 if no error occours, -1 if there is a fatal error
+*
+* @author Davide Talon (<talon.davide@gmail.com>)
+* @version 1.0
+* @since 1.0
+*/
 
 int main (int argc, char **argv) {
 
