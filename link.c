@@ -17,14 +17,9 @@
 #include "argp.h"
 
 
-
-
-const char *argp_program_version =
-  "Link 1.0";
-
 /* Program documentation. */
 static char doc[] =
-  "Argp example #3 -- a program with options and arguments using argp";
+  "Link - send file over local network";
 
 /* A description of the arguments we accept. */
 static char args_doc[] = "ARG1 ARG2";
@@ -32,10 +27,10 @@ static char args_doc[] = "ARG1 ARG2";
 /* The options we understand. */
 static struct argp_option options[] = {
   {"verbose",  'v', 0,      0,  "Produce verbose output" },
-  {"listen",    'l', 0,      0,  "Don't produce any output" },
-  {"send",   's', "<FILENAME>",      0, 	"Silent mode"},
-  {"setname",   'n', "<NEWNAME>", 0,	"Output to FILE instead of standard output" },
-  {"getname",   'g', 0,      0, 	"Silent mode"},
+  {"listen",    'l', 0,      0,  "Start listening" },
+  {"send",   's', "<FILENAME>",      0, 	"Send file"},
+  {"setname",   'n', "<NEWNAME>", 0,	"Set user name" },
+  {"getname",   'g', 0,      0, 	"Get user name"},
   { 0 }
 };
 
@@ -65,45 +60,45 @@ struct arguments
 static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   /* Get the input argument from argp_parse, which we
      know is a pointer to our arguments structure. */
-  struct arguments *arguments = state->input;
+  	struct arguments *arguments = state->input;
 
-  switch (key)
-    {
-    case 'l':
-      arguments->listen = 1;
-      break;
-    case 'v':
-      arguments->verbose = 1;
-      break;
-    case 'g':
-      arguments->getName = 1;
-      break;
-    case 'n':
-      arguments->newName = arg;
-      break;
-    case 's':
-      arguments->sendFile = arg;
-      break;
+  	switch (key) {
+    	case 'l':
+      		arguments->listen = 1;
+      		break;
+    	case 'v':
+      		arguments->verbose = 1;
+      		break;
+    	case 'g':
+      		arguments->getName = 1;
+      		break;
+    	case 'n':
+      		arguments->newName = arg;
+      		break;
+    	case 's':
+      		arguments->sendFile = arg;
+      		break;
 
-    case ARGP_KEY_ARG:
-      if (state->maxlen >= 2)
-        /* Too many arguments. */
-        argp_usage (state);
+    	case ARGP_KEY_ARG:
+      		if (state->maxlen >= 2) {
+        		argp_usage (state);
+        	}
 
-      arguments->args[state->maxlen] = arg;
+      		arguments->args[state->maxlen] = arg;
+      		break;
 
-      break;
+    	case ARGP_KEY_END:
+      		if (state->maxlen < 2) {
+     			argp_usage (state);
+     		}
+      		break;
 
-    case ARGP_KEY_END:
-      if (state->maxlen < 2)
-        /* Not enough arguments. */
-        argp_usage (state);
-      break;
-
-    default:
-      return ARGP_ERR_UNKNOWN;
+    	default:
+      		return ARGP_ERR_UNKNOWN;
     }
+
   return 0;
+  
 }
 
 /* Our argp parser. */
