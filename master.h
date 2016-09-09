@@ -1,6 +1,6 @@
 /**
 * @file master.h
-* @header for master side
+* @brief header for master side
 *
 * @author Davide Talon (<talon.davide@gmail.com>)
 * @version 1.0
@@ -18,6 +18,8 @@
 * @brief starts master mode
 *
 * @param *userName a string with current username
+*
+* @return 0 if no errors occours, -1 otherwise.
 *
 * @author Davide Talon (<talon.davide@gmail.com>)
 * @version 1.0
@@ -55,6 +57,7 @@ int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, 
 *
 * @return 0 if no errors occours, -1 otherwise.
 *
+* @bug BIND GET ADDRES ALREDY IN USE
 * @author Davide Talon (<talon.davide@gmail.com>)
 * @version 1.0
 * @since 1.0
