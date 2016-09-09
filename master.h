@@ -13,6 +13,8 @@
 #ifndef MASTER_H_INCLUDED   /* Include guard */
 #define MASTER_H_INCLUDED
 
+//start master mode
+int masterMode(const char *userName);
 
 //open an UDP server
 int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, int udpClntSockAddrLen, const char *name);
