@@ -97,7 +97,7 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 	
 }
 
-int receiveFile (const int *connectionSock, const char *fileName) {
+int receiveFile (const int *connectionSock, const char *fileToReceive) {
 
 	char buffer[DATA_BUFFER_SIZE];
 
@@ -118,7 +118,11 @@ int receiveFile (const int *connectionSock, const char *fileName) {
 
 	// opening file
 	FILE *fpOutput;
-	fpOutput = fopen(fileName, "w");
+	fpOutput = fopen(fileToReceive, "w");
+
+	if(fpOutput == NULL) {
+		printf("NONO\n");
+	}
 
 	//byte read
 	int offset = 0;
@@ -131,10 +135,12 @@ int receiveFile (const int *connectionSock, const char *fileName) {
 		offset = offset + n;
 	}
 
+
+
 	return 0;
 }
 
-int acceptFile(const int *connectionSock, char **fileName, char **senderName) {
+int acceptFile(const int *connectionSock, char **fileToReceive, char **senderName) {
 
 
 	//header will be the first HEADER_SIZE chars LINKAPP/SLVNAME/<sleave name>/FNAME/<file name.tar.gz>/
@@ -147,7 +153,13 @@ int acceptFile(const int *connectionSock, char **fileName, char **senderName) {
 	char sName[MAX_NAME_LENGTH + 1];
 	char fName[MAX_FILE_NAME_SIZE + 1];
 	
-	read(connectionSock, header, sizeof(header));
+	recv(connectionSock, header, HEADER_SIZE, 0);
+
+	if (strcmp(header, "") == 0) {
+		printf("Connessione interrotta\n");
+		return -1;
+	}
+	
 	printf("Header: %s\n", header);
 	strtok(header, "/");
 	strtok(NULL, "/");
@@ -156,10 +168,10 @@ int acceptFile(const int *connectionSock, char **fileName, char **senderName) {
 
 	strtok(NULL, "/");
 	strcat(fName, strtok(NULL, "/"));
-	strcpy(*fileName, fName);
+	strcpy(*fileToReceive, fName);
 
 
-	printf("Accept file %s from %s? (Y/N) ", *fileName, *senderName);
+	printf("Accept file %s from %s? (Y/N) ", *fileToReceive, *senderName);
 
 	char accepted = toupper(getchar());	
 
