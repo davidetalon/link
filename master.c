@@ -1,6 +1,6 @@
 /**
-* @master.c
-* @master functions
+* @file master.c
+* @functions for master side
 *
 * @author Davide Talon (<talon.davide@gmail.com>)
 * @version 1.0
@@ -14,6 +14,15 @@
 #include "master.h"
 
 
+/**
+* @brief starts master mode
+*
+* @param *userName a string with current username
+*
+* @author Davide Talon (<talon.davide@gmail.com>)
+* @version 1.0
+* @since 1.0
+*/
 int masterMode(const char *userName) {
 
 	// server UDP address
@@ -143,6 +152,22 @@ int masterMode(const char *userName) {
 
 }
 
+
+/**
+* @brief opens a UDP socket listening for incoming requests, answers with LINKAPP/SRVON/<name>
+*
+* @param udpSrvSock an integer specifying UDP master socket.
+* @param *udpClntSockAddr a pointer to sockaddr_in struct with UDP sleave socket address.
+* @param udpClntSockAddrLen an integer with UDP sleave socket size.
+* @param *name a string with curren username.
+*
+* @return 0 if no errors occours, -1 otherwise.
+*
+* @author Davide Talon (<talon.davide@gmail.com>)
+* @version 1.0
+* @since 1.0
+*/
+
 int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, int udpClntSockAddrLen, const char *name) {
 
 	char buffer[SERVICE_BUFFER_SIZE];
@@ -193,6 +218,23 @@ int openUdpSrv(const int udpSrvSock, const struct sockaddr_in *udpClntSockAddr, 
 	return 0;
 }
 
+
+/**
+* @brief opens a TCP master socket listening for incoming connection, accept them.
+*
+* @param tcpSrvSock an integer specifying TCP master socket.
+* @param *tcpSrvSockAddr a pointer to sockaddr_in struct with TCP master socket address.
+* @param tcpSrvSockAddrLen an integer with TCP master socket size.
+* @param *tcpClntSockAddr a pointer to sockaddr_in struct with TCP sleave socket address.
+* @param tcpClntSockAddrLen an integer with TCP sleave socket size.
+* @param *connectionSock a pointer to opened connection's socket.
+*
+* @return 0 if no errors occours, -1 otherwise.
+*
+* @author Davide Talon (<talon.davide@gmail.com>)
+* @version 1.0
+* @since 1.0
+*/
 int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const int tcpSrvSockAddrLen, 
 	struct sockaddr_in *tcpClntSockAddr, int tcpClntSockAddrLen, int *connectionSock) {
 
@@ -227,6 +269,19 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 	
 }
 
+
+/**
+* @brief receives file from sleave.
+*
+* @param *connectionSock a pointer to opened connection's socket.
+* @param *fileName a string with fileName to receive.
+*
+* @return 0 if no errors occours, -1 otherwise.
+*
+* @author Davide Talon (<talon.davide@gmail.com>)
+* @version 1.0
+* @since 1.0
+*/
 int receiveFile (const int *connectionSock, const char *fileToReceive) {
 
 	char buffer[DATA_BUFFER_SIZE];
@@ -270,6 +325,20 @@ int receiveFile (const int *connectionSock, const char *fileToReceive) {
 	return 0;
 }
 
+
+/**
+* @brief ask user to accept file from sleave and answer to sleave.
+*
+* @param *connectionSock a pointer to opened connection's socket.
+* @param *fileName a string with fileName to receive.
+* @param **senderName a string with name of sleave.
+*
+* @return 0 if no errors occours, -1 otherwise.
+*
+* @author Davide Talon (<talon.davide@gmail.com>)
+* @version 1.0
+* @since 1.0
+*/
 int acceptFile(const int *connectionSock, char **fileToReceive, char **senderName) {
 
 
