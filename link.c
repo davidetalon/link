@@ -122,7 +122,6 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 * @version 1.0
 * @since 1.0
 */
-
 int main (int argc, char **argv) {
 
 	struct arguments arguments;
