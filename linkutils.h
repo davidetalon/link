@@ -85,6 +85,14 @@ static const char SEND_ACCEPTED[23] =        "LINKAPP/SEND/ACCEPTED/";
 //file transmission not accepted
 static const char SEND_NOT_ACCEPTED[26] = "LINKAPP/SEND/NOTACCEPTED/";
 
+static const int MAX_SETTINGS_PATH = 306;
+
+static const char ABSOLUTE_DEFAULT_SETTINGS_PATH[] = "$HOME/.local/share/applications/link/settings.txt";
+
+static const char DEFAULT_SETTINGS_PATH[] = "/.local/share/applications/link/settings.txt";
+
+static const char MAKE_SETTINGS_DIR[] = "mkdir $HOME/.local/share/applications/link";
+
 
 
 //UNIX max file name size (extension included)
