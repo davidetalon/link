@@ -14,6 +14,9 @@
 #define SLEAVE_H_INCLUDED
 
 
+//start sleave mode
+int sleaveMode(const char *userName, const char *fileName);
+
 //function for broadcasting a service messace which pourpose is to discover Link masters listening on the local network
 int sendBroadcast (int clntSock, const struct sockaddr_in *clntSockAddr, const int *clntSockAddrLen, 
 	struct sockaddr_in *srvSockAddr, int srvSockAddrLen);
