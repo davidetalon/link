@@ -99,7 +99,7 @@ l}
 %	TABLE OF CONTENTS
 %----------------------------------------------------------------------------------------
 
-\chapterimage{head1.png} % Table of contents heading image
+\chapterimage{airdrop} % Table of contents heading image
 
 \pagestyle{empty} % No headers
 
@@ -391,10 +391,10 @@ while ((nSrvs <= MAX_NUMBER_SERVERS ) && (time(0) < excededTime) ) {
 \end{lstlisting}
 
 \subsection{Connessione TCP}
-Sicuramente questo è il cuore della piattaforma realizzata, infatti la connessione TCP permette di assicurarci una trasmissione dei dati affidabile e orientata alla connessione (pertanto ordinata). Vediamo quindi come il master apre il socket TCP e si metta in ascolto di eventuali richieste.
+La connessione TCP permette di assicurarci una trasmissione dei dati affidabile e orientata alla connessione (pertanto ordinata). Vediamo quindi come il master apre il socket TCP e si metta in ascolto di eventuali richieste.
 Ciò è disponibile nella libreria \texttt{Master} e in particolare nelle funzioni \texttt{masterMode()} e \texttt{openTcpSrv()}.
 
-Inizialmente nella funzione \texttt{masterMode()} viene inizializzata la struttura \texttt{sockaddr_in} contenente l'indirizzo del socket TCP del master, in particolare gli si assegna la famiglia \texttt{AF\_INET} che permette lo scambio di dati in rete, la porta \texttt{TCP\_SERVER\_PORT} = 2346 e gli si assegna l'intefaccia di loopbak (si imposta in ascolto in tutte le interfacce di rete disponibili).
+Inizialmente nella funzione \texttt{masterMode()} viene inizializzata la struttura \texttt{sockaddr\_in} contenente l'indirizzo del socket TCP del master, in particolare gli si assegna la famiglia \texttt{AF\_INET} che permette lo scambio di dati in rete, la porta \texttt{TCP\_SERVER\_PORT} = 2346 e gli si assegna l'intefaccia di loopbak (si imposta in ascolto in tutte le interfacce di rete disponibili).
 Successivamente si crea il socket di tipo \texttt{SOCK\_STREAM} effettuando i vari controlli sull'avvenuta creazione:
 \begin{lstlisting}[language=C]
 //server TCP address
@@ -440,8 +440,7 @@ int tcpSrvIsOpen = openTcpSrv(tcpSrvSock, (struct sockaddr_in *) &tcpSrvSockAddr
 
 Nella funzione \texttt{openTcpSrv()} pertanto si pone il socket in ascolto imponendogli una backlog di 5, ovvero limitando il numero di connessioni in sospeso nella coda del socket. Successivamente, le richieste di connessione vengono accettate mediante la funzione \texttt{accept()} e vengono salvate in \texttt{connectionSock} permettendo dunque di iniziare la trasmissione dei dati.
 \begin{lstlisting}[language=C]
-int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const int tcpSrvSockAddrLen, 
-	struct sockaddr_in *tcpClntSockAddr, int tcpClntSockAddrLen, int *connectionSock) {
+int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const int tcpSrvSockAddrLen, struct sockaddr_in *tcpClntSockAddr, int tcpClntSockAddrLen, int *connectionSock) {
 
 	printf("\nStarting TCP server...\n");
 	fflush(stdout);
@@ -469,15 +468,67 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 			return -1;
 		}
 
-		return 1;
+		return 0;
 	}
 	
 }
 \end{lstlisting}
 
 \subsection{Ricezione del file}
+Sicuramente la ricezione del file rappresenta il cuore della piattaforma realizzata in quanto permette di raggiungere l'obiettivo primario, ovvero la trasmissione dei dati da un host a un altro. E' pertanto qui riportata la documentazione relativa alla funzione \texttt{receiveFile()} presente nella libreria \texttt{Master}.
 
-        
+Dopo che l'utente ha accettato il file il master invia un messaggio allo sleave comunicandogli di poter iniziare la trasmissione. Pertanto viene ricevuta la dimensione del file da ricevere.
+Successivamente si apre, con lo stesso nome del file in ricezione, un file in modalità di scrittura.
+
+
+\begin{lstlisting}[language=C]
+int receiveFile (const int *connectionSock, const char *fileToReceive) {
+
+char buffer[DATA_BUFFER_SIZE];
+
+send(connectionSock, SEND_ACCEPTED, sizeof(SEND_ACCEPTED), 0);
+printf("Server response:%s\n", SEND_ACCEPTED);
+
+//creating service buffer for receiving file size
+char serviceBuffer[SERVICE_BUFFER_SIZE];
+memset(&serviceBuffer, 0, sizeof(serviceBuffer));
+
+//receiving buffer size
+recv(connectionSock, serviceBuffer, sizeof(serviceBuffer),  0);
+printf("buffer: %s\n", serviceBuffer);
+
+//transform buffer into a int
+int size = atoi(serviceBuffer);
+printf("File size to receive: %d\n", size);
+
+// opening file
+FILE *fpOutput;
+fpOutput = fopen(fileToReceive, "w");
+
+if(fpOutput == NULL) {
+	printf("NONO\n");
+}
+
+\end{lstlisting}
+
+Dunque si inizia a ricevere il file e si continua a leggere nel socket finchè i byte letti non corrispondono alla effettiva dimensione del file.
+
+\begin{lstlisting}[language=C]
+//byte read
+int offset = 0;
+int n;
+
+// receiving message
+while( n = read(connectionSock, buffer, sizeof(buffer)) > 0 && offset < size) {
+	fwrite(buffer, DATA_BUFFER_SIZE, 1, fpOutput);
+	// printf("%s", buffer);
+	offset = offset + n;
+}
+
+return 0;
+
+\end{lstlisting}
+
 \subsection{Argp e il parsing dei comandi}
 Grazie all'utilizzo di una piccola libreria basata su Argp di GNU  è stato possibile effettuare, in modo elegante e sicuro, il parsing dei parametri da linea di comando, in particolare, esso, infatti, ci permette di costringere l'utente all'utilizzo dei comandi designati. Analizziamo nei dettagli la sua implementazione presente in \texttt{link.c}.
 Argp ci fornisce la struttura \texttt{arpg\_option} con la quale andiamo a specificare ogni parametro utilizzato
