@@ -16,7 +16,7 @@
 
 \usepackage[top=3cm,bottom=3cm,left=3.2cm,right=3.2cm,headsep=10pt,letterpaper]{geometry} % Page margins
 
-
+\usepackage{listings}
 \usepackage{xcolor} % Required for specifying colors by name
 \definecolor{ocre}{RGB}{52,177,201} % Define the orange color used for highlighting throughout the book
 
@@ -35,6 +35,23 @@
 \defbibheading{bibempty}{}
 
 \input{structure} % Insert the commands.tex file which contains the majority of the structure behind the template
+
+\definecolor{myviolet}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mygreen}{rgb}{0,0.224,0.15}
+\definecolor{myred}{rgb}{0.229,0,0}
+
+\lstset{ %
+  backgroundcolor=\color{white},   % choose the background color
+  basicstyle=\footnotesize,        % size of fonts used for the code
+  breaklines=true,                 % automatic line breaking only at whitespace
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{myviolet},    % comment style
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  keywordstyle=\color{blue},       % keyword style
+  stringstyle=\color{mygreen},
+  numberstyle=\color{myred}     % string literal style
+l}
 
 \begin{document}
 
@@ -302,13 +319,126 @@ Trattandosi di uno dei primi grossi progetti personali sviluppati, ed essendo C 
 Ciò è stato principalmente dovuto a errori di inesperienza nella programmazione C e alla non comprensione della documentazione relativa ai socket di Unix portandomi più volte alla disperazione.
 
 \section{Implementazione del codice}
-	As you may know, an image is a matrix of numbers that cointains the specific brightness level that corresponds to a given pixel. And from there the concepts evolves and adds channels of colour and depth. But for now, let's just think about monochromatic images (only one channel). In Astronomy, images are usually considered sets of scientific data, observations, that contain information about an speficic target in the sky seen throught an specific filter and the levels of brightness correspond to the behaviour of the optical sensor (CCD camera) in relation with the number of electrons that hit a particular pixel through an specific waveband. Something else to consider is that the sky is not flat with this I mean that the celestial vault is like a sphere surrounding us therefore cartesian coorditanes are not the paramenters used to identify points in space, there is another system called WCS (World Coordinate System) hence a conversion between pixels and WCS coordinates exists. As you are realizing now just one image can contain tons of information related to it, now imagine that multiplied for terabytes and terabytes of stars, galaxies, planets, nebulae or any object in space. Fortunately in astronomy this is solved using an image format that cointains the image and its own information.
+
 
 \subsection{Socket}
-    	This format is the standard data format used in astronomy, can contain one image, multiple images, tables and header keywords providing descriptive information about the data. The way it works is that this format can contain a text file with keywords that comprise the information about the observation and a multidimensional array that could be a table, or an image, or an array of images (data cube). This files can be managed in diffetent ways, with an image preview use DS9, for handing the data in a program use the \emph{Python} package \emph{PyFITS}.
+
         
 \subsection{Argp}
-    The selected dataset to test the data mining libraries I found is a series of observations of M83 at 9 different wavelengths, the original images can be found in this webpage, \url{http://archive.stsci.edu/prepds/wfc3ers/m83datalist.html}, the specific information about them can be found in Table \ref{tab:uno}. This particular images were observed through HST with the WFC3/UVIS camera.
+Grazie all'utilizzo di una piccola libreria basata su Argp di GNU  è stato possibile effettuare, in modo elegante e sicuro, il parsing dei parametri da linea di comando, in particolare, esso, infatti, ci permette di costringere l'utente all'utilizzo dei comandi designati. Analizziamo nei dettagli la sua implementazione.
+Argp ci fornisce la struttura \texttt{arpg\_option} con la quale andiamo a specificare ogni parametro utilizzato
+\begin{lstlisting}[language=C]
+struct argp_option {
+    char *name;
+    char  key;
+    char *arg;
+    int   flags;
+    char *doc;
+    int   group;    
+};
+\end{lstlisting}
+\begin{description}
+	\item [\texttt{name}] rappresenta il nome dell'opzione;
+	\item [\texttt{key}] è la chiave che viene passata al parser per riconoscere l'opzione;
+	\item [\texttt{arg}] è l'argomento dell'opzione (se ce ne sono);
+	\item [\texttt{flags}] rappresenta i flag dell'opzione;
+	\item [\texttt{doc}] è una stringa di documentazione per l'opzione.
+\end{description}
+
+E inoltre ci mette a diposizione la struttura \texttt{argp\_state} dove vengono salvate le informazioni relative allo stato del parsing corrente.
+
+Pertanto andiamo a definire le opzioni che accettiamo da linea di comando, ovvero:
+\begin{lstlisting}[language=C]
+	static struct argp_option options[] = {
+  {"verbose", 'v', 0, 0, "Produce verbose output" },
+  {"listen", 'l', 0, 0, "Start listening" },
+  {"send", 's', "<FILENAME>", 0, "Send file"},
+  {"setname", 'n', "<NEWNAME>", 0, "Set user name" },
+  {"getname", 'g', 0, 0, "Get user name"},
+  { 0 }
+};
+\end{lstlisting}
+Dove abbiamo definito:
+\begin{description}
+	\item [\texttt{verbose}] che permette di stampare i vari passaggi dell'operazione eseguita (attualmente di default);
+	\item [\texttt{listen}] che avvia la master mode;
+	\item [\texttt{send}]  seguita dall'argomento \texttt{<filename>} che permette di attivare la sleave mode e inviare il file avente nome 					\texttt{filename};
+	\item [\texttt{setname}] seguita dall'argomento \texttt{<newname>} che permette di impostare il nuovo nome utente \texttt{newname};
+	\item [\texttt{getname}] che permette di stampare il proprio nome utente.
+\end{description}
+
+Successivamente ci occupiamo di definire la struttura argomenti che verrà passata ad \texttt{Argp} e viene utilizzata dal main per comunicare con la funzione \texttt{argp\_opt} che definiremo nel prossimo passaggio:
+\begin{lstlisting}[language=C]
+struct arguments {
+  char *args[2];                /* arg1 & arg2 */
+  int listen, verbose, getName;
+  char *sendFile;
+  char *newName;
+};
+\end{lstlisting}
+
+\noindent Quindi abbiamo la funzione che, un parametro alla volta, verificare la correttezza di quanto passato e, in caso di riconoscimento setta le variabili corrispondenti, altrimenti fissa lo stato su \texttt{ARGP\_ERR\_UNKNOWN}.
+In caso, invece in cui il numero di parametri passati sia superiore rispetto a quelli dovuti verrà fissato lo stato \texttt{ARGP\_KEY\_ARG} mentre terminato il parsing \texttt{ARGP\_KEY\_END}
+
+\begin{lstlisting}[language=C]
+static error_t parse_opt (int key, char *arg, struct argp_state *state) {
+  /* Get the input argument from argp_parse, which we
+     know is a pointer to our arguments structure. */
+  	struct arguments *arguments = state->input;
+
+  	switch (key) {
+    	case 'l':
+      		arguments->listen = 1;
+      		break;
+    	case 'v':
+      		arguments->verbose = 1;
+      		break;
+    	case 'g':
+      		arguments->getName = 1;
+      		break;
+    	case 'n':
+      		arguments->newName = arg;
+      		break;
+    	case 's':
+      		arguments->sendFile = arg;
+      		break;
+
+    	case ARGP_KEY_ARG:
+      		if (state->maxlen >= 2) {
+        		argp_usage (state);
+        	}
+
+      		arguments->args[state->maxlen] = arg;
+      		break;
+
+    	case ARGP_KEY_END:
+      		if (state->maxlen < 2) {
+     			argp_usage (state);
+     		}
+      		break;
+
+    	default:
+      		return ARGP_ERR_UNKNOWN;
+    }
+
+  return 0;
+  
+}
+
+\end{lstlisting}
+
+\noindent Andiamo dunque a costruire la struttura da passare ad argp per il parsing
+\begin{lstlisting}[language=C]
+static struct argp argp = { options, parse_opt, args_doc, doc };
+\end{lstlisting}
+\noindent In cui \texttt{options}, \texttt{parse\_opt} sono stati già definiti mentre \texttt{args\_doc} e \texttt{doc} sono delle stringhe contenenti rispettivamente informazioni sui parametri da passare e sull'applicazione.
+
+\noindent Nella funzione \texttt{main()} pertanto, dopo aver inizializzato la struttura \texttt{arguments}, effettuiamo la chiamata al parser di Argp
+
+\begin{lstlisting}[language=C]
+argp_parse (&argp, argc, argv, 0, 0, &arguments);
+\end{lstlisting}
+
 
 \subsection{Chiamate di sistema}
 
@@ -350,12 +480,7 @@ This section is where you prepare your data to be processed, you have to make su
 
 After convoling all the picures, I started to do some tests, but I realized that maybe around 30\% of the images was missing information and/or noise and the results I was getting were mislead by the outliers. In clustering algorithms we must help the algorithm, make sure that what we are inputing is something that can be clustered, although some of them are \emph{shielded} against outliers, making our data more accesible and easy for the neural networks to interpret will help you to get better results, as you can see in image \ref{img:dos} (open one and explore it in DS9) there is missing information and noise. In order to correct this I decided to go with the easiest way I could think of, just cut the image. And I did selected a processable area excluding all the missing information and noisy areas.
 
-\begin{figure}[h]
-	\centering
-    \includegraphics[width=0.47\textwidth]{uno.jpg}
-    \caption{Look at the image, it is composed of two mosaics, therefore, there are some regions with missing data, now look at the borders of each mosaic there is noise near the edges, this is data that we don't want messing with our clustering algorithm and can be classifed as outliers, it is very important to reduce them as much as possbile so the output clusters can be correclty classified and correspond to the information that we are looking for}
-    \label{img:dos}
-\end{figure}
+
 
 The next step was to build the datacube, at this point you can decide if you want to process your images indendently or all of them. The ideal here is to input all of them in a datacube, so the output cluters relate information from all the wavelenghts and the regions covered by them can be interpreted more easily. Now if you choose to create an imagecube (just append the image arrays in one FITS file) it is posible that youy images have a different conversion between their world coordinate system to pixel, so have to make sure all of your images are projected with only one conversion, this mean that you have to reproject them to a common WCS.
 
