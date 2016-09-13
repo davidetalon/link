@@ -44,14 +44,19 @@
 
 \begingroup
 \thispagestyle{empty}
-\AddToShipoutPicture*{\put(0,0){\includegraphics[scale=1.25]{network}}} % Image background
+\AddToShipoutPicture*{\put(0,0){\includegraphics[scale=1.00]{motherboard}}} % Image background
 \centering
 \vspace*{5cm}
 \par\normalfont\fontsize{35}{35}\sffamily\selectfont
+{\LARGE Università degli studi di Padova}\par % Book title
+{\LARGE Corso di ingegneria dell'informazione}\par % Book title
+{\LARGE Laboratorio di ingegneria informatica}\par % Book title
+\vspace*{1.5cm}
 \textbf{Link application}\\
-{\LARGE Send files over local network}\par % Book title
-\vspace*{1cm}
-{\Huge Davide Talon}\par % Author name
+\vspace*{1.5cm}
+{\LARGE Anno accademico 2015-2016}\par % Book title
+
+{\LARGE Davide Talon 1075692}\par % Author name
 \endgroup
 
 %----------------------------------------------------------------------------------------
@@ -62,7 +67,7 @@
 ~\vfill
 \thispagestyle{empty}
 
-%\noindent Copyright \copyright\ 2014 Andrea Hidalgo\\ % Copyright notice
+\noindent Copyright \copyright\ 2016 Davide Talon\\ % Copyright notice
 
 \noindent \textsc{Laboratorio di ingegneria informatica, Università degli studi di Padova, Italia.}\\
 
@@ -181,166 +186,118 @@ Puoi ottenere una copia della licenza al link
 %----------------------------------------------------------------------------------------
 %	CHAPTER 2
 %----------------------------------------------------------------------------------------
-\chapterimage{band1.png}
+\chapterimage{softwaredesign.jpg}
 
 \chapter{Progettazione}
 
-\section{Idea iniziale}\index{First ideas}
-So, now here you have your first astronomy picture, \footnote{For example purposes the image selected is a picture of M83 through a Wide H-alpha and [N II] filter. } what do you see?, it is a monochrome image, with different levels of brightness, slightly big (8500 x 5000), it looks like a lot of stars making a spiral.
+\section{Idea iniziale}\index{Idea iniziale}
+
+Deciso di sviluppare un software per lo scambio di file tra computer connessi alla stessa rete, sono passato alla fase di progettazione dell'applicazione Link.
+L'idea di fondo è quella di creare un unico software che funzioni sia per la ricezione che per l'invio di dati, pertanto il software dovrà essere in grado di agire sia come server, ovvero in attesa di ricevere delle richieste, sia come client che richiede la connessione.
+L'invio di un file deve avvenire in pochi semplici passaggi, pertanto, Link permette di cercare tutti i dispositivi che sono in ascolto nella rete locale e lascia all'utente la scelta del destinatario.
+Dunque, scelto il ricevente, l'applicazione si occuperà, tramite le varie chiamate di sistema, di comprimere i dati e di tutti i controlli necessari per la trasmissione dei dati.
+
+
+
+\section{Architettura}\index{Architettura software}
+
+Come già sottilineato la piattaforma deve essere in grado sia di interpretare il ruolo di server per poter ricevere i dati in ingresso, sia il ruolo di client per poter inviare i dati. Pertanto, per comprendere meglio il funzionamento dell'applicazione sono state definite due modalità operative:
+\begin{description}
+\item[Master mode] : è la condizione di ricezione e attesa, infatti la piattaforma si mette in ascolto su una specifica porta UDP e aspetta di ricere una richiesta da parte di qualche mittente, ricevuta la richiesta apre un socket TCP e riceve i dati in ingresso.
+\item [Sleave mode]: è la modalità con cui è possibile inviare un file, infatti, entrati in modalità sleave si cercano tutti i master in ascolto all'interno della rete e si inviano i dati.
+\end{description}
+Volendo rendere l'applicazione disponibile per sistemi operativi Unix-like la gestione delle connessioni è ricaduta sui socket di C offerti dalle API di Unix i quali hanno permesso di gestirle in modo piuttosto efficiente e di avere abbastanza libertà di decisione.
+Il problema principale nella progettazione dell'architettura del software è stata la non conoscenza della rete, infatti, generalmente, un server possiede un Ip statico, ma cosa succede con l'utilizzo del moderco DHCP in cui viene assegnato, all'interno della rete, un Ip casuale? E se la rete cambia?
+Pertanto si è pensato a un modo per interrogare tutti i master disponibili sulla rete inviando un messaggio broadcast.
+Per quanto riguarda la compressione, invece, si è scelto, per inter-compatibilità dei vari sistemi operativi di utilizzare tar disponibile, in varie versioni, su tutto il mondo Unix.
+Analizziamo, nel dettaglio il funzionamento della piattaforma nelle prossime sezioni.
+
+\subsection{Socket}
+Per comprendere a fondo come è stata progettata l'applicazione è necessario, innanzitutto, comprendere cosa sono i Socket e il loro funzionamento.
+I socket fanno parte della IPC (interprocess communication facilities) di Unix e permettono lo scambio di dati, oltre che sulla stessa macchina, anche tra più host connessi alla rete. In particolare supponiamo di trovarci davanti alla classica architettura Client/Server:
+
+\begin{itemize}
+	\item Ogni applicazione, sia lato server, che lato client, apre un socket ovvero una interfaccia che permette alle due applicazioni di comunicare l'una con l'altra
+	\item Il server binda il socket su indirizzo conosciuto in modo che il client possa connettersi a lui
+\end{itemize}
+
+Pertanto una trasmissione dati, a livello software, è caratterizzata da una coppia di socket che identificano rispettivamente il client e server
+Nella piattaforma Link saranno necessari principalmente due tipo di Socket:
+\begin{itemize}
+	\item  \texttt{SOCK\_STREAM} i socket di tipo stream ci permettono un canale di comunicazione affidabile, orientato alla connessione e byte-stream, ovvero:
+	\begin{description}
+		\item [Affidabile] viene garantito che i dati arrivino intatti al destinatario, ovvero così come sono stati trasmessi
+		\item [Orientato alla connessione] viene garantito che i vari messaggi arrivo al destinatario nello stesso ordine in cui sono stati inviati
+		\item [Byte-stram] non vi sono limiti di dimensioni alla quantità di dati che possono essere inviati
+	\end{description}
+	\obeylines
+	\item	\texttt{SOCK\_DGRAM} i socket di tipo datagram ci permettono di inviare dati in modo più veloce, senza però assicurarci che la trasmissione dei dati sia corretta, essi infatti possono arrivare sbagliati al destinatario, non arrivare o arrivare in ordine diverso da quello di partenza
+\end{itemize}
+In particolare verranno utilizzati i socket di tipo \texttt{AF\_INET} che permette lo scambio di dati tra host connessi in rete tramite il protocolo \textit{Ipv4}.
+
+Per bindare il socket del server, ovvero assegnargli un indirizzo noto dovremmo assegnargli una precisa porta in cui ascoltare, mentre per quanto riguarda l'indirizzo Ip, possiamo assegnargli tranquillamente \texttt{INADDR\_ANY} ovvero l'interfaccia di loopback che permette di indirizzare il socket su tutte le interfacce di rete disponibili.
+
+\begin{remark}
+	Uteriori informazioni sui socket e il loro funzionamento, insieme ad innumerevoli esempi possono essere trovati alla pagina \url http://http://www.beej.us/guide/bgnet/ e su \textit{The linux programming interface: A Linux and UNIX System Programming Handbook, M. Kerrisk, Nostark, 2010.}
+
+\end{remark}
+
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.77\textwidth]{ha-gray-conv-crp.jpg}
-    \caption{Picuture of the M83 galaxy, image taken from the WFC3 ERS M83 Data Products, http://archive.stsci.edu/prepds/wfc3ers/m83datalist.html}
+    \includegraphics[width=0.77\textwidth]{socket.jpg}
+    \caption{Principio di funzionamento dei socket, la trasmissione è identificata da una copia di socket.}
     \label{fig:awesome_image}
 \end{figure}
 
 
-\section{Architettura}\index{Hypothesis}
-Our data looks like the images on Fig.\ref{fig:cubes}, and it cointains data from let's say a determined galaxy at different wavelengths, if we assume that the galaxy contains various regions that relate to interstellar objects that can tell, how stars are formed, where, how stars die, where was a star, and other mysteries, I guess we can assume that those certain regions can be identified because they share similar characteristics, the ideas is to find how a galaxy is made from, its contents, apply the concept of the superpixel idea in 3D superpixels. 
+\subsection{Sleave}
+Come già anticipato, nella modalità sleave è possibile inviare i file al destinatario scelto, per far questo entrati nella sleave mode la piattaforma apre un socket UDP sulla porta 1234 e invia un messaggio in broadcast sulla porta 1235 interrogando tutti i Link master in ascolto sulla rete locale.
+Viene, infatti, inviata la richiesta \texttt{LINKAPP/CLNTRQT/SRVON?/} e si mette in ascolto delle eventuali risposte da parte dei master disponibili.
+Verificata la correttezza della risposta, dunque, tutti i master disponibili e validi vengono messi in un array contenente il loro nome e l'indirizzo del loro socket.
+A questo punto l'applicazione, elencando i vari master disponibili nella rete, permette, in modo interattivo, di scegliere il destinatario e di inviare i file.
+La piattaforma si preoccupa, quindi, di preparare il file da trasmettere comprimendolo come specificato nei prossimi paragrafi.
+In particolar modo, conoscendo l'indirizzo del ricevente, lo sleave apre un socket TCP sulla porta 2345, effettua una richiesta di connessione al master scelto e, inviando nei primi byte trasmessi il messaggio \texttt{LINKAPP/SLVNAME/<nomesleave>/FNAME/<nomefiledainviare>}, chiede se accetta di ricevere il file.
+Vengono dunque raccolte informazioni sul file da trasmettere e in particolare la dimensione del file, la quale viene inviata al master connesso.
+Il file viene dunque aperto in lettura e inviato allo sleave senza caricarlo interamente in memoria centrale ma limitandosi a un buffer di 4 Byte.
+
+\subsection{Master}
+Per quanto riguarda la modalità master, inizialmente viene aperto un socket UDP il quale si mette in ascolto sulla porta 1235 e eventuali richieste da parte degli sleave. Ricevuta la richesta e validata,il master, dunque, risponde al richiedente con il messaggio di servizio \texttt{LINKAPP/SRVON/<nomemaster>}.
+Quindi, dopo aver inviato le proprie informazioni, la piattaforma apre un socket TCP sulla porta 2346 e resta in attesa delle richieste di connessione.
+Stabilita la connessione, viene ricevuta la richiesta del file da trasmettere e una volta validata, viene lasciata la libertà all'utente di accettare o meno lo scambio di file. In caso di esito negativo, il master invia il messaggio  \texttt{LINKAPP/SEND/NOTACCEPTED/} e si occupa della chiusura della connessione mentre, in caso contrario, si procede con la trasmissione dei dati rispondendo con \texttt{LINKAPP/SEND/ACCEPTED/}.
+A questo punto viene ricevuta la dimensione del file trasmesso e si continua a ricevere il file finchè non è stato interamente ricevuto, ovvero finchè il numero di byte letti in entrata non corrisponde alla dimensione del file.
+
 \begin{figure}[h]
 	\centering
-    \includegraphics[width=0.57\textwidth]{nphoton.jpg}\hspace{1cm}
-    \includegraphics[width=0.27\textwidth]{data.jpg}
-    \caption{Illustrations of how a datacube looks like.}
-    \label{fig:cubes}
-\end{figure}
-
-Take the time to think about this, how the data looks like in 3D, how a star looks like in the datacube, imagine it, this is where ideas of how to tackle this problem come from.
-\begin{figure}
+    \includegraphics[width=0.77\textwidth]{broadcast.png}
+    \caption{Lo sleave invia un messaggio in broadcast per conoscere la rete in cui si trova.}
+    \label{fig:awesome_image}
 	\centering
-    \includegraphics[width=0.87\textwidth]{nine.jpg}
-    \caption{Example of how an object can look in 9 wavelenghts}
-    \label{fig:nine}
+    \includegraphics[width=0.77\textwidth]{serveron.png}
+    \caption{I master disponibili rispondono alla richiesta dello sleave confermando di essere attivi.}
+    \label{fig:awesome_image}
 \end{figure}
 
-\subsection{Topics you should review}\index{Related topics}
-This will requere a lot of work, but hey it will be worthy and fun!
-\begin{itemize}
-	\item Astroinformatics and computer science
-    	\begin{itemize}
-        	\item Data minig
-            \item Machine Learning
-            \item Big Data Analysis
-            \item Neural Networks
-            \item Visualization Resources
-        \end{itemize}
-    \item Statistics and Image Processing
-    	\begin{itemize}
-        	\item Probability Density Function
-            \item Point Spread Function
-            \item Full width at half maximum
-            \item Convolution
-        \end{itemize}
-    \item Interstellar medium and star formation
-    	\begin{itemize}
-        	\item HII regions
-            \item Planetary Nebulae
-            \item Supernova Remnants
-            \item Molecular Gas
-            \item All kinds of Nebulae (e.g. dark, refletion)
-            \item AGN's (Active Galactic Nucleus)
-        \end{itemize}
-    \item Astrophysics
-    	\begin{itemize}
-        	\item Units (light-years, parsecs)
-            \item World coordinate system
-        	\item Light
-            \item Telescopes
-            \item Stars and Stellar Evolution
-            \item Distance, Brightness, Luminosity
-            \item Galaxies
-        \end{itemize}
-\end{itemize}
-The GitHub page will certainly help you to understand why you need to learn about that, and where to find articles, wepages and books.
-\subsection{Downloading}
-First, let's equip ourselves with the basic software you will need in order to start then you may probably find other cool programs and later you will install them. There is also the possibility that your assigned computer will have them installed already but here is a brief description of what you can do with them, most of them are easy to use.
 
-\begin{description}
-	\item[DS9:] It is a program that visualizes astronomy images in FITS format (don't worry if you recognize this format, it will be explained later), where you can easily manipulate them, read their headers, compare, look at regions, see their characteristics, make graphs, even movies. Well, depending on what you need to use later you will be finding all the functions, the best way is to click everywhere and find out what happens, also you can ask to your astronomy colleagues they will tell you all the perks, or if you like learning by yourself or you need someting specific check the documentation webpage. It is faily easy to install, just follow the instructions.
-    	\begin{description}
-        	\item[Download: ]\url{http://ds9.si.edu/site/Download.html}
-            \item[Documentation: ]\url{http://ds9.si.edu/site/Documentation.html}
-        \end{description}
-        The picture below shows (Fig.\ref{fig:screen}something cool you can do in DS9.
-        \begin{figure}[h]
-        	\centering
-    \includegraphics[width=0.87\textwidth]{Screenshot.png}
-    \caption{This is an RGB picure made from 3 independent FITS files, with a zscale and a region file overlaid from NED database, if you would like to learn more about this, or reproduce it, it is all explained in this webpage: \url{https://github.com/LaurethTeX/Clustering/blob/master/NEDtoREGION-FILE/KnownRegions.md}}
-    \label{fig:screen}
-        \end{figure}
-        
-    \item[Python and a user interface: ]The most \emph{limitless} and user fiendly way to develop programs in Astronomy is using Python, there are many packages, modules, functions now available to help you in almost anything. Me, as an undergrad engineer I'm used to program on an user interface and not directly in a terminal. So, here I will explain you my own way of doing things.
-    
-    I make my programs on the Canopy editor, it shows when and where you have programing error and warnings, and the interface is easy to learn, now to run, I open a terminal, go to the directory where my program is, type \verb|ipython| wait and then type \verb|run| \verb|myProgram.py|, and wait for the result.
-    
-    Now there are a lot of fancier ways to work with \emph{Python}, you can program and test directly using \emph{IPython Notebook} on a web broswer or you can just go for the terminal, use \emph{nano} or \emph{vi} or the text editor you like and then run it by typing \verb|python| \verb|myProgram.py|. At this point is up to you, but hey here are some links to start and the packages/modules you should install.
-    
-    \begin{description}
-    	\item[Interfaces or Development environments]\hfill
-        	\begin{itemize}
-            	\item PyCharm, it a development environment, just like CodeBlocks or NetBeans \url{http://www.jetbrains.com/pycharm/}
-                \item Spyder, actually this is the interface that comes with the Python discritution Anaconda, you will get the Python districution and the intrerface. \url{https://store.continuum.io/cshop/anaconda/}
-                \item Canopy, this is the one I mentioned before, it super easy to use and you can install packages with one click. \url{https://www.enthought.com/products/canopy/}
-            \end{itemize}
-        \item[Modules]\hfill
-        \\
-        In Python, modules are like the libraries in C, therefore, to use math, astronomy and computer science tools you need to install them. To learn whether you already have a module installed or not, type on \emph{iPython} \verb|import andreaModule|, if the output result is something like \verb|ImportError: No module named andreaModule|, you definitely don't have it installed. 
-        
-        The strategy here to install packages it fairly easy, find their website, go to the download section and follow the instructions, almost all the packages are available on the Python Packaing Index and may be installed by running:
-        \begin{verbatim}
-        	pip install pyfits
-        \end{verbatim}
-        To learn how to use them check the documentation page, user manuals or their API's, if you have experience on object oriented programing it will be like running a new bike and if you don't, don't worry too much, Python was designed to be easy to program, just learn the rules of the game.
-        	\begin{itemize}
-            	\item Astropy, this package is the \emph{must have} of every astronomer, contains tools to handle coordinate systems, units, convolution.. well is better if you take a look at the webpage. \url{http://www.astropy.org/}
-                \item Numpy, this package contains the math magic functions, linear algebra tools and the array management variables, make sure you learn all about \emph{Numpy arrays} you will work with them all the time. \url{http://www.numpy.org/}
-                \item SciPy, well this package is the base of all scikit modules which contain the functions you will use in image processing and machine learning. \url{http://www.scipy.org/}
-                	\begin{itemize}
-                    	\item Scikit Image, contains image processing tools, it is the \emph{OpenCV} for \emph{Python} \url{http://scikit-image.org/}
-                        \item Scikit Learn, contains data mining algorithms, pretty much contains everything that you will ever need. \url{http://scikit-learn.org/}
-                    \end{itemize}
-                \item Matplotlib, this package is probably one of the most powerful tools visualize data, you can draw almost anything you want and exacly how you want it. An example of that are the images of the AstroML book, you can access to the image library code and learn how they are made, this is the website \url{http://www.astroml.org/book_figures/index.html}.\footnote{Statistics, Data Mining, and Machine Learning in Astronomy book, it was mentioned before}. You can download the package here \url{http://matplotlib.org/}.
-                \item PyFITS, in this package you will find tools to manipulate FITS files, create new ones, create image cubes, tables, and do all kinds of things with their headers. Certainly this package is more than useful. \url{http://www.stsci.edu/institute/software_hardware/pyfits}
-            \end{itemize}
-    \end{description}
-    In the path of researching I'm certain you will find more and new packages and by them you will be prepared to install anything.
-    \item[Montage: ]This is a toolkit for assembling astronomical images into mosaics, but it has more functions that you may need in the future to prepare your data before processing it. There are two ways of installing and I would say that is better to have them both. One is to install the toolkit and anytime you need it, you run the commands on the terminal, the other one is to install a \emph{Python} module and use it just like any other module.
-    To install montage for terminal, download the lastest version in this website \url{http://montage.ipac.caltech.edu/docs/download.html}, \textbf{read the README file} or go to this website \url{http://montage.ipac.caltech.edu/docs/build.html} and follow the steps, now if you don't have any problem installing it, you can try testing it with an example program found on this website \url{http://montage.ipac.caltech.edu/docs/pleiades_tutorial.html}, in case you are having trouble and your computer is a MAC, instead of doing step five (\emph{If you want to be able to run the Montage executables from any directory}), try this:
-    
-    \begin{enumerate}
-    	\item Open a file called \verb|.profile| located in your user folder. (e.g. \verb|/Users/Laureth|)
-        	\begin{verbatim}
-            	$ vi .profile
-            \end{verbatim}
-         \item Include in the file the following
-           \begin{verbatim}
-           	export PATH=/Applications/Montage_v3.3/bin:$PATH
-           \end{verbatim}
-           In this link (\url{https://github.com/LaurethTeX/Clustering/blob/master/Tools.md#the-profile-file}) you will find an example of how this file should look. After you modify it, make sure that you save it and type in \verb|/Users/Laureth|,
-           \begin{verbatim}
-           	$ source .profile
-           \end{verbatim}
-           Then try testing the \emph{Montage} commands, and I'm sure that it will magically work, just remember that anytime you use any command, type \verb|source .profile|.\\
-            
-    \end{enumerate}
-    
-    
-    
-      Now the other way to install, implies only to install a \emph{Python} module but this module contains less functions that the terminal application, in any case check the website \url{http://www.astropy.org/montage-wrapper/}, there you will find all the documentation you may need and the instructions to install it (\emph{Spoilers} \verb|pip install montage-wrapper| ).\\
-\end{description}
 
-Any questions you may have and how to install, here is my GitHub page for software tools \url{https://github.com/LaurethTeX/Clustering/blob/master/Tools.md}
+
+
+
+\subsection{Compressione dati}\label{Compressione}
+Per semplicità e,affinchè fosse possibile comprimere, non sono un singolo file, ma anche una cartella con tutto il suo sottoalbero ho evitato di utilizzare  zlib (solitamente utilizzato in C) ma il meccanismo di  compressione dati è affidato al sistema operativo, in particolare si è scelto di effettuare delle chiamate al sistema per invocare \texttt{tar} applicazione che permette di comprimere file, cartelle e disponibile in tutti i sistemi Unix-like.
+In particolare, dopo svariate ricerche, si è scoperto che OS X presenta la versione \texttt{bsdtar}, differente dalla tradizionale GNU tar, ma comunque compatibile.
+
+\subsection{Interfaccia utente}
+Tra gli obiettivi vi è quello di creare una interfaccia utente piuttosto semplice, pertanto, pur non essendoci una interfaccia grafica si è scelto di utilizzare dei comandi semplici e autoesplicativa attraverso il passaggio di parametri da riga di comando.
+Viene pertanto effettuato un parsing dei parametri utilizzando una versione minimizzata di Argp che permette di verificare la correttezza dei parametri passati e, in caso di errore, aiutare l'utente attraverso l' \texttt{---help}.
 
 %----------------------------------------------------------------------------------------
 %	CHAPTER 3
 %----------------------------------------------------------------------------------------
 
-\chapterimage{boat.png}
-\chapter{Sviluppo applicazione}
+\chapterimage{develop}
+\chapter{Sviluppo e implementazione}
 
-Before continuing, first and most importantly you must select the \emph{raw} data you are going to process and later after you aquire experience with an specific dataset the idea is to expand the algorithms to any kind of dataset. The important things are to learn how to input the data correctly, establish the right \emph{learning paramenters} in the selected algorithm and find the best way to visualize your results and interpret them correctly.
-
-Now let's start with basic concepts that vary from an engineering to an astronomer point of view.
+Trattandosi di uno dei primi grossi progetti personali sviluppati ed essendo C un linguaggio a me nuovo, la fase di implementazione del codice ha richiesto una parte sostanziale del tempo dedicato al progetto
 \section{Implementazione}
 	As you may know, an image is a matrix of numbers that cointains the specific brightness level that corresponds to a given pixel. And from there the concepts evolves and adds channels of colour and depth. But for now, let's just think about monochromatic images (only one channel). In Astronomy, images are usually considered sets of scientific data, observations, that contain information about an speficic target in the sky seen throught an specific filter and the levels of brightness correspond to the behaviour of the optical sensor (CCD camera) in relation with the number of electrons that hit a particular pixel through an specific waveband. Something else to consider is that the sky is not flat with this I mean that the celestial vault is like a sphere surrounding us therefore cartesian coorditanes are not the paramenters used to identify points in space, there is another system called WCS (World Coordinate System) hence a conversion between pixels and WCS coordinates exists. As you are realizing now just one image can contain tons of information related to it, now imagine that multiplied for terabytes and terabytes of stars, galaxies, planets, nebulae or any object in space. Fortunately in astronomy this is solved using an image format that cointains the image and its own information.
 	\subsection{FITS files}
@@ -478,9 +435,9 @@ HST Images, With Improved Handling of Astrometric Data, \url{http://drizzlepac.s
 %	CHAPTER 4
 %----------------------------------------------------------------------------------------
 
-\chapterimage{head1.png} % Chapter heading image
+\chapterimage{bridgetest} % Chapter heading image
 
-\chapter{Valutazione e collaudo}
+\chapter{Sviluppo e collaudo}
 
 I discovered surfing on the internet a cloud computing software that is free, has data mining algorithms embeded, is specifically developed for Astronomy and is programmed by Caltech, University Federico II and the Astronomical Observatory of Capodimonte. The homepage website, \url{http://dame.dsf.unina.it/index.html}. Well, the platform for testing is ready!, now what? I requested and account and the next day they sent me an acceptance with my username and my password approved.
 I introduced myself to the documentation, the available clustering funcionts, the manuals for every method, the blogs and discovered that the was one method available that could work with datacubes and do its clustering on every pattern (number in the multidimensional matrix) which was exaclty what I needed. The name of this method is ESOM (Evolving Self Organizing Maps) and I read its manual, did some foolish test with all my image and ... never got a result ... the experiment ran forever (more than two weeks), when I realised that this wasn't the best way to tackle this problem I started considering only clustering on the independent images and not in the datacube due to the fact that the dimensionality was inmense. So, in the end my selected methods have some results but not all, here is where all the work has to be done, analyzed and tested again.
@@ -762,14 +719,14 @@ Most of them are listed in the useful resourses section of The Caltech-JPL Summe
 %SAO datamining
 \vfill
 \textit{Wish you all the best, Andrea Hidalgo}
-\end{document}
+
 
 
 %----------------------------------------------------------------------------------------
 %	CHAPTER 5
 %----------------------------------------------------------------------------------------
 
-\chapterimage{head1.png} % Chapter heading image
+\chapterimage{windowsout} % Chapter heading image
 
 \chapter{Conclusioni e lavoro futuro}
 
