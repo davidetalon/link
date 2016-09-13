@@ -314,14 +314,172 @@ Viene pertanto effettuato un parsing dei parametri utilizzando una versione mini
 Trattandosi di uno dei primi grossi progetti personali sviluppati, ed essendo C un linguaggio a me nuovo, la fase di implementazione del codice ha richiesto una parte sostanziale del tempo dedicato al progetto.
 Ciò è stato principalmente dovuto a errori di inesperienza nella programmazione C e alla non comprensione della documentazione relativa ai socket di Unix portandomi più volte alla disperazione.
 
+
 \section{Implementazione del codice}
+In questa sezione vengono documentate le parti più complicate dell'implementazione adottata, in particolar modo il parsing dei parametri da linea di comando, la compressione dei dati e l'utilizzo dei socket per la loro trasmissione.
+
+\subsection{Scoprire i master nella rete}
+Una delle funzionalità chiave della piattaforma è sicuramente la possibilità, dopo aver mandato un messaggio broadcast all'intera rete, di ricercare i master nelle rete locale pur non conoscendone la struttura. Questa funzionalità è offerta dalla funzione \texttt{srvsInNet} nella libreria \texttt{Sleave}.
+
+Alla funzione viene passato il file descriptor \texttt{udpClntSock} del socket UDP aperto e un array vuoto di \texttt{srv} contenente informazioni sui socket dei master trovati nella rete.
+All'interno della funzione viene inizializzato un server fittizio e, successivamente, si imposta il socket in modalità non-blocking, ovvero l'esecuzione del programma non viene interrotta in attesa di dati messaggi in ingresso, proprio per questo viene impostato un tempo massimo per la ricerca.
+\begin{lstlisting}[language=C]
+int srvsInNet(const int udpClntSock, srv *srvs) {
+
+	//number of server
+	int nSrvs = 0;
+
+	struct sockaddr_in currentAddr;
+	currentAddr.sin_family = AF_INET;
+	currentAddr.sin_port = htons(UDP_SERVER_PORT);
+	currentAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	int currentAddrLen = sizeof(currentAddr);
+
+	printf("Waiting for master response...\n");
+
+	//set socket non blocking
+	fcntl(udpClntSock, F_SETFL, O_NONBLOCK);
+	int err;
+
+	//buffer created
+	char buffer[SERVICE_BUFFER_SIZE];
+
+	int excededTime = time(0) + SERVER_SEARCH_TIME;
+\end{lstlisting}
+
+A questo punto, finchè il numero di master trovati è minore del numero massimo di quelli rilevabili e non si è superato il tempo massimo di ricerca, si rimane in attesa di messaggi da parte dei server disponibili, ne viene verificata la validità ed aventualmente si aggiungono tutte le informazioni del master trovato, comprensivo di indirizzo reale, nell'array \texttt{srvs}. Si conclude restituendo il numero di master trovati.
+
+\begin{lstlisting}[language=C]
+while ((nSrvs <= MAX_NUMBER_SERVERS ) && (time(0) < excededTime) ) {
+
+		//cleaning buffer
+		bzero(buffer, SERVICE_BUFFER_SIZE);
+
+		//checking received message
+		recvfrom(udpClntSock, buffer, SERVICE_BUFFER_SIZE, 0, (struct sockaddr *) &currentAddr, &currentAddrLen);
+		err = errno;
+
+		//handle error from recvfrom
+		if ((err != EAGAIN) && (err != EWOULDBLOCK)) {
+      		printf("recv returned unrecoverable error(errno=%d)\n", err);
+      		return -1;
+      	}
+
+		char *strName;
+		//checking received message
+		if (strncmp(buffer, VALID_SERVER_ON, 14) == 0) {
+
+			//getting server name
+			strtok(buffer, "/");
+			strtok(NULL, "/");
+			strName = strtok(NULL, "/");
+
+			srv currentSrv;
+			strcpy(currentSrv.name, strName);
+			currentSrv.sockAddr = currentAddr;
+			currentSrv.sockAddrLen  = sizeof(currentSrv.sockAddr);
+
+			srvs[nSrvs] = currentSrv;
+			nSrvs++;
+
+		}	
+	}
+
+	return nSrvs;
+}
+\end{lstlisting}
+
+\subsection{Connessione TCP}
+Sicuramente questo è il cuore della piattaforma realizzata, infatti la connessione TCP permette di assicurarci una trasmissione dei dati affidabile e orientata alla connessione (pertanto ordinata). Vediamo quindi come il master apre il socket TCP e si metta in ascolto di eventuali richieste.
+Ciò è disponibile nella libreria \texttt{Master} e in particolare nelle funzioni \texttt{masterMode()} e \texttt{openTcpSrv()}.
+
+Inizialmente nella funzione \texttt{masterMode()} viene inizializzata la struttura \texttt{sockaddr_in} contenente l'indirizzo del socket TCP del master, in particolare gli si assegna la famiglia \texttt{AF\_INET} che permette lo scambio di dati in rete, la porta \texttt{TCP\_SERVER\_PORT} = 2346 e gli si assegna l'intefaccia di loopbak (si imposta in ascolto in tutte le interfacce di rete disponibili).
+Successivamente si crea il socket di tipo \texttt{SOCK\_STREAM} effettuando i vari controlli sull'avvenuta creazione:
+\begin{lstlisting}[language=C]
+//server TCP address
+struct sockaddr_in tcpSrvSockAddr;
+memset(&tcpSrvSockAddr, 0, sizeof(tcpSrvSockAddr));
+
+tcpSrvSockAddr.sin_family = AF_INET;
+tcpSrvSockAddr.sin_port = htons(TCP_SERVER_PORT);
+tcpSrvSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+int tcpSrvSockAddrLen = sizeof(tcpSrvSockAddr);
+
+//client TCP address
+struct sockaddr_in tcpClntSockAddr;
+
+int tcpClntSockAddrLen = sizeof(tcpClntSockAddr);
 
 
-\subsection{Socket}
+//create TCP server socket
+int tcpSrvSock = socket (AF_INET, SOCK_STREAM, 0);
+
+if (tcpSrvSock < 0) {
+	perror("\nCannot create TCP server socket: ");
+	return -1;
+}
+\end{lstlisting}
+
+Nella parte successiva, invece il socket viene bindato, ovvero si associa il socket a uno specifico indirizzo assegna, in questo caso a \texttt{tcpSrvSockAddr} e vi è una chiamata alla funzione \texttt{openTcpSrv()} passando come parametri il socket creato, il suo indirizzo comprensivo di dimensione, l'indirizzo e la dimensione del socket dello sleave e infine la connessione accettata.
+
+\begin{lstlisting}[language=C]
+if (bind(tcpSrvSock, (struct sockaddr *) &tcpSrvSockAddr, tcpClntSockAddrLen) < 0) {
+	perror("\nCannot bind TCP server socket: ");
+	return -1;
+}
+
+//create socket for connection 
+int connectionSock;
+
+int tcpSrvIsOpen = openTcpSrv(tcpSrvSock, (struct sockaddr_in *) &tcpSrvSockAddr, tcpSrvSockAddrLen, 
+	(struct sockaddr_in *) &tcpClntSockAddr, tcpClntSockAddrLen, &connectionSock);
+
+\end{lstlisting}
+
+Nella funzione \texttt{openTcpSrv()} pertanto si pone il socket in ascolto imponendogli una backlog di 5, ovvero limitando il numero di connessioni in sospeso nella coda del socket. Successivamente, le richieste di connessione vengono accettate mediante la funzione \texttt{accept()} e vengono salvate in \texttt{connectionSock} permettendo dunque di iniziare la trasmissione dei dati.
+\begin{lstlisting}[language=C]
+int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const int tcpSrvSockAddrLen, 
+	struct sockaddr_in *tcpClntSockAddr, int tcpClntSockAddrLen, int *connectionSock) {
+
+	printf("\nStarting TCP server...\n");
+	fflush(stdout);
+	//start listening with queue size of 5
+	if(listen(tcpSrvSock, 5) < 0) {
+		printf("Error starting listening\n");
+		// exit(1);
+	}
+
+	//search for a connection request
+	int request;
+	while (1) {
+
+		printf("ConnectionSock: %d\n", connectionSock);
+		//accept connection with sleave
+		request = accept(tcpSrvSock, (struct sockaddr *) &tcpClntSockAddr, &tcpClntSockAddrLen);
+
+		printf("ConnectionSock after accept: %d\n", request);
+
+		*connectionSock = request;
+		
+		
+		if(connectionSock < 0) {
+			perror("Connection with sleave not accepted: ");
+			return -1;
+		}
+
+		return 1;
+	}
+	
+}
+\end{lstlisting}
+
+\subsection{Ricezione del file}
 
         
-\subsection{Argp}
-Grazie all'utilizzo di una piccola libreria basata su Argp di GNU  è stato possibile effettuare, in modo elegante e sicuro, il parsing dei parametri da linea di comando, in particolare, esso, infatti, ci permette di costringere l'utente all'utilizzo dei comandi designati. Analizziamo nei dettagli la sua implementazione.
+\subsection{Argp e il parsing dei comandi}
+Grazie all'utilizzo di una piccola libreria basata su Argp di GNU  è stato possibile effettuare, in modo elegante e sicuro, il parsing dei parametri da linea di comando, in particolare, esso, infatti, ci permette di costringere l'utente all'utilizzo dei comandi designati. Analizziamo nei dettagli la sua implementazione presente in \texttt{link.c}.
 Argp ci fornisce la struttura \texttt{arpg\_option} con la quale andiamo a specificare ogni parametro utilizzato
 \begin{lstlisting}[language=C]
 struct argp_option {
@@ -490,92 +648,6 @@ Quindi, per poter utilizzare il risultato di tale chiama, vi è la necessità di
 
   	char result = fgetc(fp);
 \end{lstlisting}
-
-
-
-
-\section{Codice interessante}
-This section is where you prepare your data to be processed, you have to make sure that all your images have the same grid size, same spatial resolution, less possible quantity of outliers abd noise and same coordinate system. Now, what are those things? Same grid size means that your images must have the same pixel size, in the dataset we are processing we don't have to worry about this, the pixel size is 0.0396 arcsec/pixel. Now, spatial resoultion, each image has it's own spatial resolution depending on the filter that was used to get the observation, the number that you will be looking for is the FWHM that describes the PSF of every image. When you have all the FWHM for all the images you should choose the largest which corresponds to the poorest spatial resolution and create a convolution kernel with \emph{Tiny Tim} or use a gaussian kernel calculated with \emph{Astropy} and convolve all the images with that kernel. This exactly what I did, if you look at image \ref{img:conv}, you will see the before and after convolution. In table \ref{tab:dos} you can see how I chose the number for the FWHM.
-
-
-\begin{table}[h]
-  \centering
-    \begin{tabular}{ c c c }
-    \hline\hline
-    
-    Filter / Config. & Central $\lambda$ & FWHM (arcsec)\\
-    \hline
-    
-    F225W & 235.9 nm & $\sim$0.083\\
-    
-    F336W & 335.5 nm & $\sim$0.075\\
-    
-    F373N & 373.0 nm & $\sim$0.070\\
-    
-    F438W & 432.5 nm & $\sim$0.070\\
-    
-    F487N & 487.1 nm & $\sim$0.067\\
-    
-    F502N & 501.0 nm & $\sim$0.067\\
-    
-    F657N & 656.7 nm & $\sim$0.070\\
-    
-    F673N & 676.6 nm & $\sim$0.070\\
-    
-    F814W & 802.4 nm & $\sim$0.074\\
-    
-    \hline
-  \end{tabular}
-  \caption{WFC3/UVIS PSF FWHM informations for the selected dataset, as you can see the largest number here is 0.083 wich means the poorest spatial resolution, this is the number used to calculate the convolution kernel, in order to precess them all images must have the same spatial resolution.}
-  \label{tab:dos}
-\end{table}
-
-After convoling all the picures, I started to do some tests, but I realized that maybe around 30\% of the images was missing information and/or noise and the results I was getting were mislead by the outliers. In clustering algorithms we must help the algorithm, make sure that what we are inputing is something that can be clustered, although some of them are \emph{shielded} against outliers, making our data more accesible and easy for the neural networks to interpret will help you to get better results, as you can see in image \ref{img:dos} (open one and explore it in DS9) there is missing information and noise. In order to correct this I decided to go with the easiest way I could think of, just cut the image. And I did selected a processable area excluding all the missing information and noisy areas.
-
-
-
-The next step was to build the datacube, at this point you can decide if you want to process your images indendently or all of them. The ideal here is to input all of them in a datacube, so the output cluters relate information from all the wavelenghts and the regions covered by them can be interpreted more easily. Now if you choose to create an imagecube (just append the image arrays in one FITS file) it is posible that youy images have a different conversion between their world coordinate system to pixel, so have to make sure all of your images are projected with only one conversion, this mean that you have to reproject them to a common WCS.
-
-Well, what I wrote before it is a brief summary of what I did, but I'm sure that you can find a better way to do your own data pre-processing but here are some things that you should consider:
-	\begin{itemize}
-    	\item Create a methond as general as possible, with input parameter that can be adapted to any kind of data, this will save you a lot of work in the future
-        \item Understand first your algorithm, how the data is going to be processed and design the best way to input your data
-        \item Accomodate your data according to the type of attributes that the algorithm can handle
-        \item Consider the size of your dataset, if it's huge your program may never end
-        \item Find out of your algorithm can work with high dimensional data (multi-wavelenght), because if not, you won't be able to input datacubes
-        \item Find out if your selected clustering algorithms is able to find clusters of irregular shapes, this will help you to device the best way to accomodate your patterns
-        \item Handle outliers, if you identify them, know where they are, try to eliminate them as much as possible, we don't want them messing with our clusters
-        \item In case that you come up with an artful mathematical method like PCA to reduce dimensionality, make sure that what you input can later make sense when is clustered, becuase you will be working in another space
-        \item Remeber that the most important goal is to find hidden knowledge therefore, you must know you to visualize and interpret your results
-        \item For the let's call it \emph{astronomy image processing}, make sure that your data is scientifically aproved ask people around you.
-    \end{itemize}
-
-%Convolution
-%Cropping
-%Repgojection
-%Cubbing
-%Explain the main rules of why to preprocess the data
-
-This section is explained at lenght in the GitHub page, there you will find my codes and some helpful links, \url{https://github.com/LaurethTeX/Clustering/blob/master/Preprocessing.md}
-
-\section{Software available}
-%Como hacer preprocessing en los datos
-For doing data preprocessing there are a bunch of softwares available, even there is one being developed by Sophia Lianou called \emph{imagecube} which, when it is finished, will be one of the best, has everything you need in one package. I'll say that this part is yours to discover, everyday there are more and more being released or new versions of the existent ones but in the meanwhile it will depend entirely on you, which software you want to use. For \emph{Python} all the functions you will need can be found in the \emph{Astropy} module, \textbf{check the API!!!.}
-
-
-This specific part is all explained in GitHub in this link. \url{https://github.com/LaurethTeX/Clustering/blob/master/Preprocessing.md#first-step-data-pre-processing}
-
-\begin{remark}
-	Some links to start,
-    \begin{itemize}
-    	\item Astropy, Convolution and filtering, \url{http://docs.astropy.org/en/stable/convolution/index.html}
-        \item AstroDrizzle: New Software for Aligning and Combining
-HST Images, With Improved Handling of Astrometric Data, \url{http://drizzlepac.stsci.edu/}
-		\item Tiny Tim HST PSF Modeling, \url{http://www.stsci.edu/hst/observatory/focus/TinyTim}
-        \item IRAF, Image Reduction and Analysis Facility, \url{http://iraf.noao.edu/}
-    \end{itemize}
-\end{remark}
-
 
 %----------------------------------------------------------------------------------------
 %	CHAPTER 4
