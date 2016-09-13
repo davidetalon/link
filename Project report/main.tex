@@ -295,10 +295,6 @@ A questo punto viene ricevuta la dimensione del file trasmesso e si continua a r
 \end{figure}
 
 
-
-
-
-
 \subsection{Compressione dati}\label{Compressione}
 Per semplicità e,affinchè fosse possibile comprimere, non sono un singolo file, ma anche una cartella con tutto il suo sottoalbero ho evitato di utilizzare  zlib (solitamente utilizzato in C) ma il meccanismo di  compressione dati è affidato al sistema operativo, in particolare si è scelto di effettuare delle chiamate al sistema per invocare \texttt{tar} applicazione che permette di comprimere file, cartelle e disponibile in tutti i sistemi Unix-like.
 In particolare, dopo svariate ricerche, si è scoperto che OS X presenta la versione \texttt{bsdtar}, differente dalla tradizionale GNU tar, ma comunque compatibile.
@@ -441,6 +437,62 @@ argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
 
 \subsection{Chiamate di sistema}
+Un'altra parte interessante del codice sono sicuramente le chiamate a sistema che legano questa piattaforma ai sistemi operativi Unix-like.
+In particolare sono state effettuate due principali chiamate:
+\begin{description}
+	\item[Compressione]: per effettuare la compressione del file/cartella da inviare è stata effettuata una chiama al sistema attraverso la funzione 			\texttt{system()} presente nella \texttt{stdio.h} la quale ha permesso di chiedere al sistema operativo dell'host di eseguire il comando 				desiderato. Avendo scelto di utilizzare \texttt{tar} il comando \texttt{tarCommand} non è altro che la stringa "tar -zcf <filename>.tar.gz 			<filename>"
+\end{description}
+
+\begin{lstlisting}[language=C]
+	system(tarCommand);
+\end{lstlisting}
+
+\begin{description}
+		
+	\item[Verifica esistenza file]: per verificare l'esistenza del file/cartella ho dovuto utilizzare i comandi della bash \texttt{[ -f <nomefile> 			]}/\texttt{[ -d <nomecartella> ]} ma, affinchè il risultato di questa chiamata fosse poi computabile è stato necessario aprire una pipe con la 			shell nella funzione \texttt{exists()}		
+\end{description}
+
+Inizialmente nella funzione \texttt{exists()} è stata modificata la chiamata al sistema in base al tipo di file da inviare, infatti, nel caso in cui sia necessario effettivamente un file la chiamata al sistema dovrà essere \texttt{[ -f <nomefile> ]} mentre, nel caso in cui si debba inviare una cartella, dovrà essere \texttt{[ -d <nomefile> ]}.
+Pertanto il comando di sistema che verifica l'esistenza del file/cartella viene costruito in modo tale che la shell restituisca il carattere '1' in caso di esito positivo, '0 altrimenti'.
+\begin{lstlisting}[language=C]
+char exists(const char *fileName, char c) {
+
+	if (c != 'f' && c != 'd') {
+		printf("Argument not valid");
+		return 0;
+	}
+
+	//construction of system call for verifying if file exists
+	char existsCommand[EXISTS_COMMAND_SIZE];
+	memset(&existsCommand, 0, sizeof(char) * EXISTS_COMMAND_SIZE);
+
+	if (c == 'f') {
+		strcpy(existsCommand, "[ -f ");
+	} else {
+		strcpy(existsCommand, "[ -d ");
+	}
+
+	strcat(existsCommand, fileName);
+	strcat(existsCommand, " ] && echo 1 || echo 0");
+\end{lstlisting}
+
+Quindi, per poter utilizzare il risultato di tale chiama, vi è la necessità di aprire una pipe con la shell, effettuare un forking e reindirizzare l'output su un I/O stream attraverso la funzione popen.
+
+\begin{lstlisting}[language=C]
+	// open pipe with unix shell
+	FILE *fp;
+	fp = popen(existsCommand, "r");
+
+	if (fp == NULL) {
+    	printf("Failed to run command\n" );
+    	exit(1);
+  	}
+
+  	char result = fgetc(fp);
+\end{lstlisting}
+
+
+
 
 \section{Codice interessante}
 This section is where you prepare your data to be processed, you have to make sure that all your images have the same grid size, same spatial resolution, less possible quantity of outliers abd noise and same coordinate system. Now, what are those things? Same grid size means that your images must have the same pixel size, in the dataset we are processing we don't have to worry about this, the pixel size is 0.0396 arcsec/pixel. Now, spatial resoultion, each image has it's own spatial resolution depending on the filter that was used to get the observation, the number that you will be looking for is the FWHM that describes the PSF of every image. When you have all the FWHM for all the images you should choose the largest which corresponds to the poorest spatial resolution and create a convolution kernel with \emph{Tiny Tim} or use a gaussian kernel calculated with \emph{Astropy} and convolve all the images with that kernel. This exactly what I did, if you look at image \ref{img:conv}, you will see the before and after convolution. In table \ref{tab:dos} you can see how I chose the number for the FWHM.
