@@ -15,11 +15,12 @@
 \documentclass[11pt,fleqn]{book} % Default font size and left-justified equations
 
 \usepackage[top=3cm,bottom=3cm,left=3.2cm,right=3.2cm,headsep=10pt,letterpaper]{geometry} % Page margins
-
+\usepackage{pdfcolparallel}
 \usepackage{listings}
 \usepackage{xcolor} % Required for specifying colors by name
 \definecolor{ocre}{RGB}{52,177,201} % Define the orange color used for highlighting throughout the book
-
+\usepackage{graphicx}
+\usepackage{subfig}
 % Font Settings
 \usepackage{avant} % Use the Avantgarde font for headings
 %\usepackage{times} % Use the Times font for headings
@@ -52,6 +53,13 @@
   stringstyle=\color{mygreen},
   numberstyle=\color{myred}     % string literal style
 l}
+
+\lstdefinestyle{BashStyle}{
+  numbersep=10pt,
+  tabsize=4,
+  showspaces=false,
+  showstringspaces=false
+}
 
 \begin{document}
 
@@ -353,41 +361,41 @@ A questo punto, finchè il numero di master trovati è minore del numero massimo
 \begin{lstlisting}[language=C]
 while ((nSrvs <= MAX_NUMBER_SERVERS ) && (time(0) < excededTime) ) {
 
-		//cleaning buffer
-		bzero(buffer, SERVICE_BUFFER_SIZE);
+	//cleaning buffer
+	bzero(buffer, SERVICE_BUFFER_SIZE);
 
-		//checking received message
-		recvfrom(udpClntSock, buffer, SERVICE_BUFFER_SIZE, 0, (struct sockaddr *) &currentAddr, &currentAddrLen);
-		err = errno;
+	//checking received message
+	recvfrom(udpClntSock, buffer, SERVICE_BUFFER_SIZE, 0, (struct sockaddr *) &currentAddr, &currentAddrLen);
+	err = errno;
 
-		//handle error from recvfrom
-		if ((err != EAGAIN) && (err != EWOULDBLOCK)) {
-      		printf("recv returned unrecoverable error(errno=%d)\n", err);
-      		return -1;
-      	}
+	//handle error from recvfrom
+	if ((err != EAGAIN) && (err != EWOULDBLOCK)) {
+      	printf("recv returned unrecoverable error(errno=%d)\n", err);
+      	return -1;
+      }
 
-		char *strName;
-		//checking received message
-		if (strncmp(buffer, VALID_SERVER_ON, 14) == 0) {
+	char *strName;
+	//checking received message
+	if (strncmp(buffer, VALID_SERVER_ON, 14) == 0) {
 
-			//getting server name
-			strtok(buffer, "/");
-			strtok(NULL, "/");
-			strName = strtok(NULL, "/");
+		//getting server name
+		strtok(buffer, "/");
+		strtok(NULL, "/");
+		strName = strtok(NULL, "/");
 
-			srv currentSrv;
-			strcpy(currentSrv.name, strName);
-			currentSrv.sockAddr = currentAddr;
-			currentSrv.sockAddrLen  = sizeof(currentSrv.sockAddr);
+		srv currentSrv;
+		strcpy(currentSrv.name, strName);
+		currentSrv.sockAddr = currentAddr;
+		currentSrv.sockAddrLen  = sizeof(currentSrv.sockAddr);
 
-			srvs[nSrvs] = currentSrv;
-			nSrvs++;
+		srvs[nSrvs] = currentSrv;
+		nSrvs++;
 
-		}	
-	}
-
-	return nSrvs;
+	}	
 }
+
+return nSrvs;
+
 \end{lstlisting}
 
 \subsection{Connessione TCP}
@@ -708,9 +716,143 @@ Quindi, per poter utilizzare il risultato di tale chiama, vi è la necessità di
 
 \chapter{Valutazione e collaudo}
 
-\section{Verifica delle funzionalità}
-
 \section{Testing sul campo}
+La fase di sviluppo dell'applicazione è stata un susseguirsi di implementazione e testing delle nuove funzionalità. In particolare, sfruttando il fatto che master e sleave lavorano con socket bindati a porte differenti, è stato possibile testare la piattaforma semplicemente utilizzando in parallelo due shell di comando in cui da una parte si attiva la masterMode, mentre dall'altra la sleaveMode.
+Riportiamo di seguito il risultato dei test principali eseguiti, comprensivi di messaggi utili per la comprensione di quanto l'applicazione sta realmente facendo, a sinistra avremo il master, mentre a destra abbiamo lo sleave:
+
+\begin{Parallel}{0.5\textwidth}{0.5\textwidth}
+\ParallelLText{
+\begin{lstlisting}[language=Bash]
+MacBook-Pro-di-Davide-3:master davidetalon$ link --listen
+
+Waiting for sleave...
+\end{lstlisting}
+}
+\ParallelRText{
+\begin{lstlisting}[language=Bash]
+MacBook-Pro-di-Davide-3:sleave davidetalon$ link --send canzone.mp3
+Broadcast sent: LINKAPP/CLNTRQT/SRVON?
+Waiting for master response...
+1 masters found
+
+0. Tallo
+Scegliere un master valido:
+\end{lstlisting}
+}
+\ParallelPar
+\end{Parallel}
+
+Mentre dal lato master viene aperto il socket Udp in ascolto per eventuali richieste, dal lato sleave vengono inviati i pacchetti 				broadcast e si stabiliscono i server attivi all'interno della rete, dando la possibilità all'utente di scegliere il destinatario.
+
+\begin{Parallel}{0.5\textwidth}{0.5\textwidth}
+\ParallelLText{
+\begin{lstlisting}[language=Bash]
+MacBook-Pro-di-Davide-3:master davidetalon$ link --listen
+
+Waiting for sleave...UDP request: LINKAPP/CLNTRQT/SRVON?
+Server response: LINKAPP/SRVON/Tallo
+Starting TCP server...
+ConnectionSock: 1514626604
+\end{lstlisting}
+}
+\ParallelRText{
+\begin{lstlisting}[language=Bash]
+MacBook-Pro-di-Davide-3:sleave davidetalon$ link --send canzone.mp3
+Broadcast sent: LINKAPP/CLNTRQT/SRVON?
+Waiting for master response...
+1 masters found
+
+0. Tallo
+Scegliere un master valido: 0
+Connetcting to Tallo...
+Connection enstabilished.
+tarCommand command: tar -zcf canzone.mp3.tar.gz canzone.mp3
+Header sent: LINKAPP/SLVNAME/Tallo/FNAME/canzone.mp3.tar.gz/
+Header size: 336
+\end{lstlisting}
+}
+\ParallelPar
+\end{Parallel}
+
+Ricevuta la richiesta da parte dello sleave il master attiva il socket TCP e resta in attesa di eventuali connessioni, dall'altra parte lo sleave si connette al master ed invia l'header contenente il proprio username e il nome del file da inviare.
+
+\begin{Parallel}{0.5\textwidth}{0.5\textwidth}
+\ParallelLText{
+\begin{lstlisting}[language=Bash]
+MacBook-Pro-di-Davide-3:master davidetalon$ link --listen
+
+Waiting for sleave...UDP request: LINKAPP/CLNTRQT/SRVON?
+Server response: LINKAPP/SRVON/Tallo
+Starting TCP server...
+ConnectionSock: 1514626604
+ConnectionSock after accept: 6
+Connection enstabilished
+ConnectionSock: 6
+Header: LINKAPP/SLVNAME/Tallo/FNAME/canzone.mp3.tar.gz/
+Accept file canzone.mp3.tar.gz from Tallo? (Y/N)
+\end{lstlisting}
+}
+\ParallelRText{
+\begin{lstlisting}[language=Bash]
+MacBook-Pro-di-Davide-3:sleave davidetalon$ link --send canzone.mp3
+Broadcast sent: LINKAPP/CLNTRQT/SRVON?
+Waiting for master response...
+1 masters found
+
+0. Tallo
+Scegliere un master valido: 0
+Connetcting to Tallo...
+Connection enstabilished.
+tarCommand command: tar -zcf canzone.mp3.tar.gz canzone.mp3
+Header sent: LINKAPP/SLVNAME/Tallo/FNAME/canzone.mp3.tar.gz/
+Header size: 336
+Server response: LINKAPP/SEND/ACCEPTED/
+Opening file canzone.mp3.tar.gz ...
+size: 7210143
+Remove command: rm -r canzone.mp3.tar.gz
+File succefully sent.
+\end{lstlisting}
+}
+\ParallelPar
+\end{Parallel}
+
+Grazie all'header precedentemente trasmesso il master ha le informazioni necessarie per chiedere all'utente se desidera accettare il file in ingresso, nella master mode, invece, una volta che il file è stato accettato esso viene inviato con successo.
+
+\noindent Infine notiamo come il file sia realmente giunto a destinazione e sia valido, infatti è possibile estrarlo.
+
+\begin{lstlisting}[language=Bash]
+MacBook-Pro-di-Davide-3:master davidetalon$ link --listen
+
+Waiting for sleave...UDP request: LINKAPP/CLNTRQT/SRVON?
+Server response: LINKAPP/SRVON/Tallo
+Starting TCP server...
+ConnectionSock: 1514626604
+ConnectionSock after accept: 6
+Connection enstabilished
+ConnectionSock: 6
+Header: LINKAPP/SLVNAME/Tallo/FNAME/canzone.mp3.tar.gz/
+Accept file canzone.mp3.tar.gz from Tallo? (Y/N) y
+
+Receiving file canzone.mp3.tar.gz from Tallo...
+Server response:LINKAPP/SEND/ACCEPTED/
+buffer: 7210143
+File size to receive: 7210143
+MacBook-Pro-di-Davide-3:master davidetalon$ ls
+canzone.mp3.tar.gz
+MacBook-Pro-di-Davide-3:master davidetalon$ tar -xzf canzone.mp3.tar.gz
+MacBook-Pro-di-Davide-3:master davidetalon$ ls
+canzone.mp3		canzone.mp3.tar.gz
+\end{lstlisting}
+
+
+\section{Valutazione e bug riscontrati}
+Osservando l'output dei terminali relativi allo sleave e al master è possibile confermare la correttezza dei risultati e verificare il soddisfamento delle specifiche che avevamo prefissato come obiettivo. Tuttavia sono stati riscontrati alcuni bug che compaioni in determinate condizioni:
+\begin{description}
+	\item[Unrecoverable error]: alcune volte capita che, nel socket UDP dello sleave, la \texttt{recvfrom()} dia "Unrecoverable error" errno = 9 Bad 		file number (motivo non ancora identificato);
+	\item[File name invalid encoding]: nella trasmissione dati da un sistema operativo OS X ad Ubuntu il nome del file assume una codifica non 			valida, tale problema è dovuto alla differente codifica dei caratteri nei due sistemi operativi;
+	\item[Address already in use]: lo sleave tentando di connettersi al server (TCP) utilizza un indirizza già in uso 
+\end{description}
+
 
 
 
@@ -726,10 +868,11 @@ Quindi, per poter utilizzare il risultato di tale chiama, vi è la necessità di
 L'applicazione si trova tuttora a uno stato embrionale, infatti, possono essere fatte numerose interessanti modifiche che permettono di estenderne le funzionalità e di allargarne l'utenza. 
 Alcune interessanti idee sono sicuramente:
 \begin{description}
-	\item[Porting su Windows]: innanzitutto uno dei prossimi obiettivi sarà sicuramente quello di rendere disponibile l'applicazione anche per 				utenti Windows permettendo dunque di raggiungere la gran parte del mercato. Ciò comporta un carico di lavoro abbastanza elevato,in quanto, 			non solo dobbiamo adattare i socket a Winsock ma dobbiamo adattare le varie chiamate del sistema, in particolare:
+	\item[Correzione bugs]: risolvere i problemi attualmente riscontrati
+	\item[Porting su Windows]: uno dei prossimi obiettivi sarà sicuramente quello di rendere disponibile l'applicazione anche per utenti Windows 			permettendo dunque di raggiungere la gran parte del mercato. Ciò comporta un carico di lavoro abbastanza elevato,in quanto, non solo dobbiamo 			adattare i socket a Winsock ma dobbiamo adattare le varie chiamate del sistema, in particolare:
 			\begin{itemize}
 				\item la verifica dell'esistenza o meno del file da inviare
-				\item la compressione dei dati da inviare, infatti windows non fornisce una libreria  per la compressione di dati,contrariamente a 					quanto avviene nei sistemi Unix-like
+				\item la compressione dei dati da inviare, infatti Windows non fornisce una libreria  per la compressione di dati,contrariamente a 					quanto avviene nei sistemi Unix-like
 			\end{itemize}
 	\item[Introduzione crittografia end-to-end]: è possibile introdurre una crittografia E2EE per rendere la trasmissione dei file sicura e 				impenetrabile contro i malintenzionati
 	\item[Più formati di compressione]: è inoltre doveroso implementare più sistemi di compressione per lasciare all'utente la possibilità di 				scegliere il formato di compressione desiderato
