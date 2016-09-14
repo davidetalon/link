@@ -40,7 +40,7 @@ struct argp_option {
     char *arg;
     int   flags;
     char *doc;
-    int   group;         /* ignored */
+    int   group;    
 };
 
 

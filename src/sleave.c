@@ -66,6 +66,7 @@ int sleaveMode(const char *userName, const char *fileName){
 		return -1;
 	}
 
+
 	//binding UDP client socket
 	if (bind(udpClntSock, (struct sockaddr *) &udpClntSockAddr, udpClntSockAddrLen) < 0) {
 		perror("\nCannot bind UDP client socket: ");
@@ -124,6 +125,13 @@ int sleaveMode(const char *userName, const char *fileName){
 		tcpClntSock = socket (AF_INET, SOCK_STREAM, 0);
 		if (tcpClntSock < 0) {
 			perror("Cannot create TCP socket for communication: ");
+		}
+
+		// set SO_REUSEADDR on a socket to true (1):
+		int optval = 1;
+		if (setsockopt(tcpClntSock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval) < 0 ) {
+			printf("Reuseaddr failed.\n");
+			return -1;
 		}
 
 		//binding TCP client socket

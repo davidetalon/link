@@ -35,8 +35,7 @@ static struct argp_option options[] = {
 };
 
 /* Used by main to communicate with parse_opt. */
-struct arguments
-{
+struct arguments {
   char *args[2];                /* arg1 & arg2 */
   int listen, verbose, getName;
   char *sendFile;
@@ -152,7 +151,7 @@ int main (int argc, char **argv) {
 		
 		strcpy(userName, bufferSettings);
 
-		printf("READING: userName = %s, buffer = %s\n", userName, bufferSettings);
+		// printf("READING: userName = %s, buffer = %s\n", userName, bufferSettings);
 
 		close(settingsPointerR);
 
@@ -164,7 +163,7 @@ int main (int argc, char **argv) {
 		FILE *settingsPointerW = fopen(linkSettingsPath, "w");
 
 		strcpy(bufferSettings, userName);
-		printf("\nWRITING: buffer = %s, userName = %s\n", bufferSettings, userName);
+		// printf("\nWRITING: buffer = %s, userName = %s\n", bufferSettings, userName);
 		fwrite(bufferSettings, sizeof(bufferSettings) - 1, 1, settingsPointerW);
 		// write(settingsPointerW, bufferSettings, sizeof(bufferSettings));
 

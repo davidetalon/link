@@ -89,6 +89,19 @@ int masterMode(const char *userName) {
 		return -1;
 	}
 
+	//set reuseaddr
+	// if (setsockopt(tcpSrvSock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0) {
+ //    	printf("SO_REUSEADDR failed");
+ //    	return -1;
+ //    }
+
+	// set SO_REUSEADDR on a socket to true (1):
+	int optval = 1;
+	if (setsockopt(tcpSrvSock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval) < 0 ) {
+		printf("Reuseaddr failed.\n");
+		return -1;
+	}
+
 	if (bind(tcpSrvSock, (struct sockaddr *) &tcpSrvSockAddr, tcpClntSockAddrLen) < 0) {
 		perror("\nCannot bind TCP server socket: ");
 		return -1;
@@ -268,7 +281,7 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 			return -1;
 		}
 
-		return 1;
+		return 0;
 	}
 	
 }

@@ -1,1 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc   -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk -dynamiclib -Wl,-headerpad_max_install_names  -o bin/lib/libSleave.dylib -install_name @rpath/libSleave.dylib CMakeFiles/Sleave.dir/sleave.c.o 
