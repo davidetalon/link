@@ -1,0 +1,203 @@
+\hypertarget{master_8c}{}\section{src/master.c File Reference}
+\label{master_8c}\index{src/master.\+c@{src/master.\+c}}
+
+
+functions for master side  
+
+
+{\ttfamily \#include \char`\"{}linkutils.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}master.\+h\char`\"{}}\newline
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{master_8c_ad036f2e046044a992c717f3db23c9234}{master\+Mode} (const char $\ast$user\+Name)
+\begin{DoxyCompactList}\small\item\em starts master mode \end{DoxyCompactList}\item 
+int \hyperlink{master_8c_abc612b9d75956314d49c4af24084d6a4}{open\+Udp\+Srv} (const int udp\+Srv\+Sock, const struct sockaddr\+\_\+in $\ast$udp\+Clnt\+Sock\+Addr, int udp\+Clnt\+Sock\+Addr\+Len, const char $\ast$name)
+\begin{DoxyCompactList}\small\item\em opens a U\+DP socket listening for incoming requests, answers with L\+I\+N\+K\+A\+P\+P/\+S\+R\+V\+O\+N/$<$name$>$ \end{DoxyCompactList}\item 
+int \hyperlink{master_8c_a4a81382cb810c6a27885a2e72846296a}{open\+Tcp\+Srv} (const int tcp\+Srv\+Sock, struct sockaddr\+\_\+in $\ast$tcp\+Srv\+Sock\+Addr, const int tcp\+Srv\+Sock\+Addr\+Len, struct sockaddr\+\_\+in $\ast$tcp\+Clnt\+Sock\+Addr, int tcp\+Clnt\+Sock\+Addr\+Len, int $\ast$connection\+Sock)
+\begin{DoxyCompactList}\small\item\em opens a T\+CP master socket listening for incoming connection, accept them. \end{DoxyCompactList}\item 
+int \hyperlink{master_8c_abf5d31aeb7aff00342b26aec81872c3f}{receive\+File} (const int $\ast$connection\+Sock, const char $\ast$file\+To\+Receive)
+\begin{DoxyCompactList}\small\item\em receives file from sleave. \end{DoxyCompactList}\item 
+int \hyperlink{master_8c_aa5cc21bf0aa74e1b007a31b90fe77aaf}{accept\+File} (const int $\ast$connection\+Sock, char $\ast$$\ast$file\+To\+Receive, char $\ast$$\ast$sender\+Name)
+\begin{DoxyCompactList}\small\item\em ask user to accept file from sleave and answer to sleave. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+functions for master side 
+
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0
+\end{DoxySince}
+\begin{DoxyCopyright}{Copyright}
+Copyright (c) 2016-\/2017 
+
+Apache License, Version 2.\+0 
+\end{DoxyCopyright}
+
+
+\subsection{Function Documentation}
+\hypertarget{master_8c_aa5cc21bf0aa74e1b007a31b90fe77aaf}{}\label{master_8c_aa5cc21bf0aa74e1b007a31b90fe77aaf} 
+\index{master.\+c@{master.\+c}!accept\+File@{accept\+File}}
+\index{accept\+File@{accept\+File}!master.\+c@{master.\+c}}
+\subsubsection{\texorpdfstring{accept\+File()}{acceptFile()}}
+{\footnotesize\ttfamily int accept\+File (\begin{DoxyParamCaption}\item[{const int $\ast$}]{connection\+Sock,  }\item[{char $\ast$$\ast$}]{file\+To\+Receive,  }\item[{char $\ast$$\ast$}]{sender\+Name }\end{DoxyParamCaption})}
+
+
+
+ask user to accept file from sleave and answer to sleave. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em $\ast$connection\+Sock} & a pointer to opened connection\textquotesingle{}s socket. \\
+\hline
+{\em $\ast$$\ast$file\+To\+Receive} & a string with file\+Name to receive. \\
+\hline
+{\em $\ast$$\ast$sender\+Name} & a string with name of sleave.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{master_8c_ad036f2e046044a992c717f3db23c9234}{}\label{master_8c_ad036f2e046044a992c717f3db23c9234} 
+\index{master.\+c@{master.\+c}!master\+Mode@{master\+Mode}}
+\index{master\+Mode@{master\+Mode}!master.\+c@{master.\+c}}
+\subsubsection{\texorpdfstring{master\+Mode()}{masterMode()}}
+{\footnotesize\ttfamily int master\+Mode (\begin{DoxyParamCaption}\item[{const char $\ast$}]{user\+Name }\end{DoxyParamCaption})}
+
+
+
+starts master mode 
+
+
+\begin{DoxyParams}{Parameters}
+{\em $\ast$user\+Name} & a string with current username\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{master_8c_a4a81382cb810c6a27885a2e72846296a}{}\label{master_8c_a4a81382cb810c6a27885a2e72846296a} 
+\index{master.\+c@{master.\+c}!open\+Tcp\+Srv@{open\+Tcp\+Srv}}
+\index{open\+Tcp\+Srv@{open\+Tcp\+Srv}!master.\+c@{master.\+c}}
+\subsubsection{\texorpdfstring{open\+Tcp\+Srv()}{openTcpSrv()}}
+{\footnotesize\ttfamily int open\+Tcp\+Srv (\begin{DoxyParamCaption}\item[{const int}]{tcp\+Srv\+Sock,  }\item[{struct sockaddr\+\_\+in $\ast$}]{tcp\+Srv\+Sock\+Addr,  }\item[{const int}]{tcp\+Srv\+Sock\+Addr\+Len,  }\item[{struct sockaddr\+\_\+in $\ast$}]{tcp\+Clnt\+Sock\+Addr,  }\item[{int}]{tcp\+Clnt\+Sock\+Addr\+Len,  }\item[{int $\ast$}]{connection\+Sock }\end{DoxyParamCaption})}
+
+
+
+opens a T\+CP master socket listening for incoming connection, accept them. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em tcp\+Srv\+Sock} & an integer specifying T\+CP master socket. \\
+\hline
+{\em $\ast$tcp\+Srv\+Sock\+Addr} & a pointer to sockaddr\+\_\+in struct with T\+CP master socket address. \\
+\hline
+{\em tcp\+Srv\+Sock\+Addr\+Len} & an integer with T\+CP master socket size. \\
+\hline
+{\em $\ast$tcp\+Clnt\+Sock\+Addr} & a pointer to sockaddr\+\_\+in struct with T\+CP sleave socket address. \\
+\hline
+{\em tcp\+Clnt\+Sock\+Addr\+Len} & an integer with T\+CP sleave socket size. \\
+\hline
+{\em $\ast$connection\+Sock} & a pointer to opened connection\textquotesingle{}s socket.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyRefDesc}{Bug}
+\item[\hyperlink{bug__bug000001}{Bug}]B\+I\+ND G\+ET A\+D\+D\+R\+ES A\+L\+R\+E\+DY IN U\+SE \end{DoxyRefDesc}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{master_8c_abc612b9d75956314d49c4af24084d6a4}{}\label{master_8c_abc612b9d75956314d49c4af24084d6a4} 
+\index{master.\+c@{master.\+c}!open\+Udp\+Srv@{open\+Udp\+Srv}}
+\index{open\+Udp\+Srv@{open\+Udp\+Srv}!master.\+c@{master.\+c}}
+\subsubsection{\texorpdfstring{open\+Udp\+Srv()}{openUdpSrv()}}
+{\footnotesize\ttfamily int open\+Udp\+Srv (\begin{DoxyParamCaption}\item[{const int}]{udp\+Srv\+Sock,  }\item[{const struct sockaddr\+\_\+in $\ast$}]{udp\+Clnt\+Sock\+Addr,  }\item[{int}]{udp\+Clnt\+Sock\+Addr\+Len,  }\item[{const char $\ast$}]{name }\end{DoxyParamCaption})}
+
+
+
+opens a U\+DP socket listening for incoming requests, answers with L\+I\+N\+K\+A\+P\+P/\+S\+R\+V\+O\+N/$<$name$>$ 
+
+
+\begin{DoxyParams}{Parameters}
+{\em udp\+Srv\+Sock} & an integer specifying U\+DP master socket. \\
+\hline
+{\em $\ast$udp\+Clnt\+Sock\+Addr} & a pointer to sockaddr\+\_\+in struct with U\+DP sleave socket address. \\
+\hline
+{\em udp\+Clnt\+Sock\+Addr\+Len} & an integer with U\+DP sleave socket size. \\
+\hline
+{\em $\ast$name} & a string with curren username.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{master_8c_abf5d31aeb7aff00342b26aec81872c3f}{}\label{master_8c_abf5d31aeb7aff00342b26aec81872c3f} 
+\index{master.\+c@{master.\+c}!receive\+File@{receive\+File}}
+\index{receive\+File@{receive\+File}!master.\+c@{master.\+c}}
+\subsubsection{\texorpdfstring{receive\+File()}{receiveFile()}}
+{\footnotesize\ttfamily int receive\+File (\begin{DoxyParamCaption}\item[{const int $\ast$}]{connection\+Sock,  }\item[{const char $\ast$}]{file\+To\+Receive }\end{DoxyParamCaption})}
+
+
+
+receives file from sleave. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em $\ast$connection\+Sock} & a pointer to opened connection\textquotesingle{}s socket. \\
+\hline
+{\em $\ast$file\+To\+Receive} & a string with file\+Name to receive.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}

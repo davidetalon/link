@@ -1,0 +1,346 @@
+\hypertarget{sleave_8h}{}\section{src/sleave.h File Reference}
+\label{sleave_8h}\index{src/sleave.\+h@{src/sleave.\+h}}
+
+
+header for sleave side  
+
+
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{sleave_8h_ace791830a90bbe8370d300eecefedf48}{sleave\+Mode} (const char $\ast$user\+Name, const char $\ast$file\+Name)
+\begin{DoxyCompactList}\small\item\em starts sleave mode \end{DoxyCompactList}\item 
+int \hyperlink{sleave_8h_a98bdf272210005a009a34dd042880f22}{send\+Broadcast} (int clnt\+Sock, const struct sockaddr\+\_\+in $\ast$clnt\+Sock\+Addr, const int $\ast$clnt\+Sock\+Addr\+Len, struct sockaddr\+\_\+in $\ast$srv\+Sock\+Addr, int srv\+Sock\+Addr\+Len)
+\begin{DoxyCompactList}\small\item\em sends a broadcast message to all masters listening on the network. \end{DoxyCompactList}\item 
+int \hyperlink{sleave_8h_ab76401dd1285091b95c991839fee8d97}{srvs\+In\+Net} (const int udp\+Clnt\+Sock, \hyperlink{structsrv}{srv} $\ast$srvs)
+\begin{DoxyCompactList}\small\item\em finds masters on the local network. \end{DoxyCompactList}\item 
+int \hyperlink{sleave_8h_af82c540c2ee8990f06fd1cc6c9f76969}{listing\+Srvs} (const struct \hyperlink{structsrv}{srv} $\ast$found\+Srvs, int found\+Srvs\+Len)
+\begin{DoxyCompactList}\small\item\em list found masters on the local network. \end{DoxyCompactList}\item 
+int \hyperlink{sleave_8h_a8eb928d0ff6302e3c92af6dbf7da81b7}{open\+Connection} (int tcp\+Clnt\+Sock, struct sockaddr\+\_\+in $\ast$tcp\+Clnt\+Sock\+Addr, int tcp\+Clnt\+Sock\+Addr\+Len, int selected\+Server, \hyperlink{structsrv}{srv} $\ast$found\+Srvs)
+\begin{DoxyCompactList}\small\item\em opens a T\+CP sleave socket connecting to master\textquotesingle{}s socket. \end{DoxyCompactList}\item 
+char \hyperlink{sleave_8h_ae1021a484246fdf5a36fb4b7e26f6400}{exists} (const char $\ast$file\+Name, char c)
+\begin{DoxyCompactList}\small\item\em check if a file or folder exists. \end{DoxyCompactList}\item 
+int \hyperlink{sleave_8h_a24f88506fad7fd7d23488cd1e47cd9c3}{ask\+To\+Send\+File} (const int tcp\+Clnt\+Sock, const char $\ast$file\+Name, const char $\ast$name)
+\begin{DoxyCompactList}\small\item\em asks to master to accept file. \end{DoxyCompactList}\item 
+int \hyperlink{sleave_8h_ad7fc7f62f282a73599f1304ec729d1ea}{send\+File} (const int tcp\+Clnt\+Sock, const char $\ast$file\+Name)
+\begin{DoxyCompactList}\small\item\em sends file to master. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+header for sleave side 
+
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0
+\end{DoxySince}
+\begin{DoxyCopyright}{Copyright}
+Copyright (c) 2016-\/2017 
+
+Apache License, Version 2.\+0 
+\end{DoxyCopyright}
+
+
+\subsection{Function Documentation}
+\hypertarget{sleave_8h_a24f88506fad7fd7d23488cd1e47cd9c3}{}\label{sleave_8h_a24f88506fad7fd7d23488cd1e47cd9c3} 
+\index{sleave.\+h@{sleave.\+h}!ask\+To\+Send\+File@{ask\+To\+Send\+File}}
+\index{ask\+To\+Send\+File@{ask\+To\+Send\+File}!sleave.\+h@{sleave.\+h}}
+\subsubsection{\texorpdfstring{ask\+To\+Send\+File()}{askToSendFile()}}
+{\footnotesize\ttfamily int ask\+To\+Send\+File (\begin{DoxyParamCaption}\item[{const int}]{tcp\+Clnt\+Sock,  }\item[{const char $\ast$}]{file\+Name,  }\item[{const char $\ast$}]{name }\end{DoxyParamCaption})}
+
+
+
+asks to master to accept file. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em tcp\+Clnt\+Sock} & an integer specifying T\+CP sleave socket. \\
+\hline
+{\em $\ast$file\+Name} & a string with file\+Name to send. \\
+\hline
+{\em $\ast$name} & a string containing user name\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{sleave_8h_ae1021a484246fdf5a36fb4b7e26f6400}{}\label{sleave_8h_ae1021a484246fdf5a36fb4b7e26f6400} 
+\index{sleave.\+h@{sleave.\+h}!exists@{exists}}
+\index{exists@{exists}!sleave.\+h@{sleave.\+h}}
+\subsubsection{\texorpdfstring{exists()}{exists()}}
+{\footnotesize\ttfamily char exists (\begin{DoxyParamCaption}\item[{const char $\ast$}]{file\+Name,  }\item[{char}]{c }\end{DoxyParamCaption})}
+
+
+
+check if a file or folder exists. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em $\ast$file\+Name} & a string containing name of file to check. \\
+\hline
+{\em c} & a char that specify folder or file.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+\textquotesingle{}1\textquotesingle{} if file/folder exists, \textquotesingle{}0\textquotesingle{} otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{sleave_8h_af82c540c2ee8990f06fd1cc6c9f76969}{}\label{sleave_8h_af82c540c2ee8990f06fd1cc6c9f76969} 
+\index{sleave.\+h@{sleave.\+h}!listing\+Srvs@{listing\+Srvs}}
+\index{listing\+Srvs@{listing\+Srvs}!sleave.\+h@{sleave.\+h}}
+\subsubsection{\texorpdfstring{listing\+Srvs()}{listingSrvs()}}
+{\footnotesize\ttfamily int listing\+Srvs (\begin{DoxyParamCaption}\item[{const struct \hyperlink{structsrv}{srv} $\ast$}]{found\+Srvs,  }\item[{int}]{found\+Srvs\+Len }\end{DoxyParamCaption})}
+
+
+
+list found masters on the local network. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em $\ast$found\+Srvs} & a pointer to an array of srv struct. \\
+\hline
+{\em found\+Srvs\+Len} & an integer specifyng number of found servers.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+number of servers on the network, -\/1 if errors occours.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{sleave_8h_a8eb928d0ff6302e3c92af6dbf7da81b7}{}\label{sleave_8h_a8eb928d0ff6302e3c92af6dbf7da81b7} 
+\index{sleave.\+h@{sleave.\+h}!open\+Connection@{open\+Connection}}
+\index{open\+Connection@{open\+Connection}!sleave.\+h@{sleave.\+h}}
+\subsubsection{\texorpdfstring{open\+Connection()}{openConnection()}}
+{\footnotesize\ttfamily int open\+Connection (\begin{DoxyParamCaption}\item[{int}]{tcp\+Clnt\+Sock,  }\item[{struct sockaddr\+\_\+in $\ast$}]{tcp\+Clnt\+Sock\+Addr,  }\item[{int}]{tcp\+Clnt\+Sock\+Addr\+Len,  }\item[{int}]{selected\+Server,  }\item[{\hyperlink{structsrv}{srv} $\ast$}]{found\+Srvs }\end{DoxyParamCaption})}
+
+
+
+opens a T\+CP sleave socket connecting to master\textquotesingle{}s socket. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em tcp\+Clnt\+Sock} & an integer specifying T\+CP sleave socket. \\
+\hline
+{\em $\ast$tcp\+Clnt\+Sock\+Addr} & a pointer to sockaddr\+\_\+in struct with T\+CP sleave socket address. \\
+\hline
+{\em tcp\+Clnt\+Sock\+Addr\+Len} & an integer with T\+CP sleave socket size. \\
+\hline
+{\em selected\+Server} & an integer specifyng selected server \\
+\hline
+{\em $\ast$found\+Srvs} & a pointer to an array of srv struct.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyRefDesc}{Bug}
+\item[\hyperlink{bug__bug000006}{Bug}]B\+I\+ND G\+ET A\+D\+D\+R\+ES A\+L\+R\+E\+DY IN U\+SE \end{DoxyRefDesc}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0
+\end{DoxySince}
+
+\begin{DoxyParams}{Parameters}
+{\em tcp\+Clnt\+Sock} & an integer specifying T\+CP sleave socket. \\
+\hline
+{\em $\ast$tcp\+Clnt\+Sock\+Addr} & a pointer to sockaddr\+\_\+in struct with T\+CP sleave socket address. \\
+\hline
+{\em tcp\+Clnt\+Sock\+Addr\+Len} & an integer with T\+CP sleave socket size. \\
+\hline
+{\em selected\+Server} & an integer specifyng selected server \\
+\hline
+{\em $\ast$found\+Srvs} & a pointer to an array of srv struct.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyRefDesc}{Bug}
+\item[\hyperlink{bug__bug000004}{Bug}]B\+I\+ND G\+ET A\+D\+D\+R\+ES A\+L\+R\+E\+DY IN U\+SE \end{DoxyRefDesc}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{sleave_8h_a98bdf272210005a009a34dd042880f22}{}\label{sleave_8h_a98bdf272210005a009a34dd042880f22} 
+\index{sleave.\+h@{sleave.\+h}!send\+Broadcast@{send\+Broadcast}}
+\index{send\+Broadcast@{send\+Broadcast}!sleave.\+h@{sleave.\+h}}
+\subsubsection{\texorpdfstring{send\+Broadcast()}{sendBroadcast()}}
+{\footnotesize\ttfamily int send\+Broadcast (\begin{DoxyParamCaption}\item[{int}]{clnt\+Sock,  }\item[{const struct sockaddr\+\_\+in $\ast$}]{clnt\+Sock\+Addr,  }\item[{const int $\ast$}]{clnt\+Sock\+Addr\+Len,  }\item[{struct sockaddr\+\_\+in $\ast$}]{srv\+Sock\+Addr,  }\item[{int}]{srv\+Sock\+Addr\+Len }\end{DoxyParamCaption})}
+
+
+
+sends a broadcast message to all masters listening on the network. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em clnt\+Sock} & an integer specifying U\+DP sleave socket. \\
+\hline
+{\em $\ast$clnt\+Sock\+Addr} & a pointer to sockaddr\+\_\+in struct with U\+DP sleave socket address. \\
+\hline
+{\em clnt\+Sock\+Addr\+Len} & an integer with U\+DP sleave socket size. \\
+\hline
+{\em $\ast$srv\+Sock\+Addr} & a pointer to sockaddr\+\_\+in struct with U\+DP master socket address. \\
+\hline
+{\em srv\+Sock\+Addr\+Len} & an integer with U\+DP master socket size.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{sleave_8h_ad7fc7f62f282a73599f1304ec729d1ea}{}\label{sleave_8h_ad7fc7f62f282a73599f1304ec729d1ea} 
+\index{sleave.\+h@{sleave.\+h}!send\+File@{send\+File}}
+\index{send\+File@{send\+File}!sleave.\+h@{sleave.\+h}}
+\subsubsection{\texorpdfstring{send\+File()}{sendFile()}}
+{\footnotesize\ttfamily int send\+File (\begin{DoxyParamCaption}\item[{const int}]{tcp\+Clnt\+Sock,  }\item[{const char $\ast$}]{file\+Name }\end{DoxyParamCaption})}
+
+
+
+sends file to master. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em tcp\+Clnt\+Sock} & an integer specifying T\+CP sleave socket. \\
+\hline
+{\em $\ast$file\+Name} & a string with file\+Name to send.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{sleave_8h_ace791830a90bbe8370d300eecefedf48}{}\label{sleave_8h_ace791830a90bbe8370d300eecefedf48} 
+\index{sleave.\+h@{sleave.\+h}!sleave\+Mode@{sleave\+Mode}}
+\index{sleave\+Mode@{sleave\+Mode}!sleave.\+h@{sleave.\+h}}
+\subsubsection{\texorpdfstring{sleave\+Mode()}{sleaveMode()}}
+{\footnotesize\ttfamily int sleave\+Mode (\begin{DoxyParamCaption}\item[{const char $\ast$}]{user\+Name,  }\item[{const char $\ast$}]{file\+Name }\end{DoxyParamCaption})}
+
+
+
+starts sleave mode 
+
+
+\begin{DoxyParams}{Parameters}
+{\em $\ast$user\+Name} & a string with current username \\
+\hline
+{\em $\ast$file\+Name} & a string with file\+Name to send.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}
+\hypertarget{sleave_8h_ab76401dd1285091b95c991839fee8d97}{}\label{sleave_8h_ab76401dd1285091b95c991839fee8d97} 
+\index{sleave.\+h@{sleave.\+h}!srvs\+In\+Net@{srvs\+In\+Net}}
+\index{srvs\+In\+Net@{srvs\+In\+Net}!sleave.\+h@{sleave.\+h}}
+\subsubsection{\texorpdfstring{srvs\+In\+Net()}{srvsInNet()}}
+{\footnotesize\ttfamily int srvs\+In\+Net (\begin{DoxyParamCaption}\item[{const int}]{udp\+Clnt\+Sock,  }\item[{\hyperlink{structsrv}{srv} $\ast$}]{srvs }\end{DoxyParamCaption})}
+
+
+
+finds masters on the local network. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em udp\+Clnt\+Sock} & an integer specifying U\+DP sleave socket. \\
+\hline
+{\em $\ast$srvs} & a pointer to an array of srv struct.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyRefDesc}{Bug}
+\item[\hyperlink{bug__bug000005}{Bug}]R\+E\+CV return errno=9 B\+E\+B\+A\+DF Bad file number \end{DoxyRefDesc}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0
+\end{DoxySince}
+
+\begin{DoxyParams}{Parameters}
+{\em udp\+Clnt\+Sock} & an integer specifying U\+DP sleave socket. \\
+\hline
+{\em $\ast$srvs} & a pointer to an array of srv struct.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if no errors occours, -\/1 otherwise.
+\end{DoxyReturn}
+\begin{DoxyRefDesc}{Bug}
+\item[\hyperlink{bug__bug000003}{Bug}]R\+E\+CV return errno=9 B\+E\+B\+A\+DF Bad file number \end{DoxyRefDesc}
+\begin{DoxyAuthor}{Author}
+Davide Talon (\href{mailto:talon.davide@gmail.com}{\tt talon.\+davide@gmail.\+com}) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0 
+\end{DoxySince}

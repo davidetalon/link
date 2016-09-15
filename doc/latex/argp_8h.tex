@@ -1,0 +1,68 @@
+\hypertarget{argp_8h}{}\section{src/argp.h File Reference}
+\label{argp_8h}\index{src/argp.\+h@{src/argp.\+h}}
+
+
+minimal replacement for G\+NU Argp library  
+
+
+{\ttfamily \#include $<$getopt.\+h$>$}\newline
+{\ttfamily \#include $<$string.\+h$>$}\newline
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structargp__option}{argp\+\_\+option}
+\begin{DoxyCompactList}\small\item\em Options for argp. \end{DoxyCompactList}\item 
+struct \hyperlink{structargp__state}{argp\+\_\+state}
+\begin{DoxyCompactList}\small\item\em State for argp. \end{DoxyCompactList}\item 
+struct \hyperlink{structargp}{argp}
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{argp_8h_a9ad6b2dc3cbff040775e79656fe8e1a3}{}\label{argp_8h_a9ad6b2dc3cbff040775e79656fe8e1a3} 
+typedef int {\bfseries error\+\_\+t}
+\end{DoxyCompactItemize}
+\subsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{argp_8h_a06fc87d81c62e9abb8790b6e5713c55b}{}\label{argp_8h_a06fc87d81c62e9abb8790b6e5713c55b} 
+enum \{ {\bfseries A\+R\+G\+P\+\_\+\+K\+E\+Y\+\_\+\+A\+RG}, 
+{\bfseries A\+R\+G\+P\+\_\+\+K\+E\+Y\+\_\+\+E\+ND}, 
+{\bfseries A\+R\+G\+P\+\_\+\+E\+R\+R\+\_\+\+U\+N\+K\+N\+O\+WN}, 
+{\bfseries A\+R\+G\+P\+\_\+\+I\+N\+\_\+\+O\+R\+D\+ER}
+ \}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{argp_8h_ab3199adbc49be538be62a198594ba1c7}{}\label{argp_8h_ab3199adbc49be538be62a198594ba1c7} 
+void {\bfseries argp\+\_\+help} (struct \hyperlink{structargp__state}{argp\+\_\+state} $\ast$state)
+\item 
+\hypertarget{argp_8h_a003ed56b5f0e36f658078cc4d42f3674}{}\label{argp_8h_a003ed56b5f0e36f658078cc4d42f3674} 
+void {\bfseries argp\+\_\+usage} (struct \hyperlink{structargp__state}{argp\+\_\+state} $\ast$state)
+\item 
+\hypertarget{argp_8h_a9252bcb4dfd1d1aab42e9cf46356e5d5}{}\label{argp_8h_a9252bcb4dfd1d1aab42e9cf46356e5d5} 
+char $\ast$ {\bfseries cleanarg} (char $\ast$s)
+\item 
+\hypertarget{argp_8h_a65ff8d9438c53a282bf669ed206aea13}{}\label{argp_8h_a65ff8d9438c53a282bf669ed206aea13} 
+void {\bfseries argp\+\_\+parse} (struct \hyperlink{structargp}{argp} $\ast$\hyperlink{structargp}{argp}, int argc, char $\ast$$\ast$argv, int flags, int tmp, void $\ast$input)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+minimal replacement for G\+NU Argp library 
+
+\begin{DoxyAuthor}{Author}
+Peter Desnoyers 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxySince}{Since}
+1.\+0
+\end{DoxySince}
+\begin{DoxyCopyright}{Copyright}
+2011 Peter Desnoyers, Northeastern University 
+
+This file is free software; you can redistribute it and/or modify it under the terms of the G\+NU Lesser General Public License as published by the Free Software Foundation; either version 2.\+1 of the License, or (at your option) any later version. 
+\end{DoxyCopyright}
