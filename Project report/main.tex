@@ -337,14 +337,14 @@ Viene pertanto effettuato un parsing dei parametri utilizzando una versione mini
 
 \section{Inizio dello sviluppo}
 Trattandosi di uno dei primi grossi progetti personali sviluppati, ed essendo C un linguaggio a me nuovo, la fase di implementazione del codice ha richiesto una parte sostanziale del tempo dedicato al progetto.
-Ciò è stato principalmente dovuto a errori di inesperienza nella programmazione C e alla non comprensione della documentazione relativa ai socket di Unix portandomi più volte alla disperazione.
+Ciò è stato principalmente dovuto a errori di inesperienza nella programmazione C e alla non comprensione della documentazione relativa ai socket di Unix portando più volte alla disperazione.
 
 
 \section{Implementazione del codice}
-In questa sezione vengono documentate le parti più complicate dell'implementazione adottata, in particolar modo il parsing dei parametri da linea di comando, la compressione dei dati e l'utilizzo dei socket per la loro trasmissione.
+In questa sezione vengono documentate le parti più complicate dell'implementazione adottata, in particolar modo come scoprire i master nella rete, il parsing dei parametri da linea di comando, la compressione dei dati e l'utilizzo dei socket per la loro trasmissione.
 
 \subsection{Scoprire i master nella rete}
-Una delle funzionalità chiave della piattaforma è sicuramente la possibilità, dopo aver mandato un messaggio broadcast all'intera rete, di ricercare i master nelle rete locale pur non conoscendone la struttura. Questa funzionalità è offerta dalla funzione \texttt{srvsInNet} nella libreria \texttt{Sleave}.
+Una delle funzionalità chiave della piattaforma è sicuramente la possibilità, dopo aver mandato un messaggio broadcast all'intera rete, di trovare i master nelle rete locale pur non conoscendone la struttura. Questa funzionalità è offerta dalla funzione \texttt{srvsInNet()} presente in\texttt{sleave.c}.
 
 Alla funzione viene passato il file descriptor \texttt{udpClntSock} del socket UDP aperto e un array vuoto di \texttt{srv} contenente informazioni sui socket dei master trovati nella rete.
 All'interno della funzione viene inizializzato un server fittizio e, successivamente, si imposta il socket in modalità non-blocking, ovvero l'esecuzione del programma non viene interrotta in attesa di dati messaggi in ingresso, proprio per questo viene impostato un tempo massimo per la ricerca.
@@ -373,11 +373,10 @@ int srvsInNet(const int udpClntSock, srv *srvs) {
 	int excededTime = time(0) + SERVER_SEARCH_TIME;
 \end{lstlisting}
 
-A questo punto, finchè il numero di master trovati è minore del numero massimo di quelli rilevabili e non si è superato il tempo massimo di ricerca, si rimane in attesa di messaggi da parte dei server disponibili, ne viene verificata la validità ed aventualmente si aggiungono tutte le informazioni del master trovato, comprensivo di indirizzo reale, nell'array \texttt{srvs}. Si conclude restituendo il numero di master trovati.
+A questo punto, finchè il numero di master trovati è minore del numero massimo di quelli rilevabili e non si è superato il tempo massimo di ricerca, si rimane in attesa di messaggi da parte dei server disponibili, viene verificata la validità ed aventualmente si aggiungono tutte le informazioni del master trovato, comprensivo di indirizzo reale, nell'array \texttt{srvs}. Si conclude restituendo il numero di master trovati.
 
 \begin{lstlisting}[language=C]
 while ((nSrvs <= MAX_NUMBER_SERVERS ) && (time(0) < excededTime) ) {
-
 	//cleaning buffer
 	bzero(buffer, SERVICE_BUFFER_SIZE);
 
@@ -390,7 +389,6 @@ while ((nSrvs <= MAX_NUMBER_SERVERS ) && (time(0) < excededTime) ) {
       	printf("recv returned unrecoverable error(errno=%d)\n", err);
       	return -1;
       }
-
 	char *strName;
 	//checking received message
 	if (strncmp(buffer, VALID_SERVER_ON, 14) == 0) {
@@ -399,7 +397,6 @@ while ((nSrvs <= MAX_NUMBER_SERVERS ) && (time(0) < excededTime) ) {
 		strtok(buffer, "/");
 		strtok(NULL, "/");
 		strName = strtok(NULL, "/");
-
 		srv currentSrv;
 		strcpy(currentSrv.name, strName);
 		currentSrv.sockAddr = currentAddr;
@@ -417,7 +414,7 @@ return nSrvs;
 
 \subsection{Connessione TCP}
 La connessione TCP permette di assicurarci una trasmissione dei dati affidabile e orientata alla connessione (pertanto ordinata). Vediamo quindi come il master apre il socket TCP e si metta in ascolto di eventuali richieste.
-Ciò è disponibile nella libreria \texttt{Master} e in particolare nelle funzioni \texttt{masterMode()} e \texttt{openTcpSrv()}.
+Ciò è disponibile in \texttt{master.c} e in particolare nelle funzioni \texttt{masterMode()} e \texttt{openTcpSrv()}.
 
 Inizialmente nella funzione \texttt{masterMode()} viene inizializzata la struttura \texttt{sockaddr\_in} contenente l'indirizzo del socket TCP del master, in particolare gli si assegna la famiglia \texttt{AF\_INET} che permette lo scambio di dati in rete, la porta \texttt{TCP\_SERVER\_PORT} = 2346 e gli si assegna l'intefaccia di loopbak (si imposta in ascolto in tutte le interfacce di rete disponibili).
 Successivamente si crea il socket di tipo \texttt{SOCK\_STREAM} effettuando i vari controlli sull'avvenuta creazione:
@@ -447,7 +444,7 @@ if (tcpSrvSock < 0) {
 }
 \end{lstlisting}
 
-Nella parte successiva, invece il socket viene bindato, ovvero si associa il socket a uno specifico indirizzo assegna, in questo caso a \texttt{tcpSrvSockAddr} e vi è una chiamata alla funzione \texttt{openTcpSrv()} passando come parametri il socket creato, il suo indirizzo comprensivo di dimensione, l'indirizzo e la dimensione del socket dello sleave e infine la connessione accettata.
+Nella parte successiva, invece il socket viene bindato, ovvero si associa il socket a uno specifico indirizzo assegnato, in questo caso a \texttt{tcpSrvSockAddr}, e vi è una chiamata alla funzione \texttt{openTcpSrv()} passando come parametri il socket creato, il suo indirizzo comprensivo di dimensione, l'indirizzo e la dimensione del socket dello sleave e infine la connessione accettata.
 
 \begin{lstlisting}[language=C]
 if (bind(tcpSrvSock, (struct sockaddr *) &tcpSrvSockAddr, tcpClntSockAddrLen) < 0) {
@@ -457,9 +454,9 @@ if (bind(tcpSrvSock, (struct sockaddr *) &tcpSrvSockAddr, tcpClntSockAddrLen) < 
 
 //create socket for connection 
 int connectionSock;
-
-int tcpSrvIsOpen = openTcpSrv(tcpSrvSock, (struct sockaddr_in *) &tcpSrvSockAddr, tcpSrvSockAddrLen, 
-	(struct sockaddr_in *) &tcpClntSockAddr, tcpClntSockAddrLen, &connectionSock);
+int tcpSrvIsOpen = openTcpSrv(tcpSrvSock, (struct sockaddr_in *)&tcpSrvSockAddr,
+  tcpSrvSockAddrLen, (struct sockaddr_in *)&tcpClntSockAddr, tcpClntSockAddrLen,
+  &connectionSock);
 
 \end{lstlisting}
 
@@ -500,10 +497,9 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 \end{lstlisting}
 
 \subsection{Ricezione del file}
-Sicuramente la ricezione del file rappresenta il cuore della piattaforma realizzata in quanto permette di raggiungere l'obiettivo primario, ovvero la trasmissione dei dati da un host a un altro. E' pertanto qui riportata la documentazione relativa alla funzione \texttt{receiveFile()} presente nella libreria \texttt{Master}.
+Sicuramente la ricezione del file rappresenta il cuore della piattaforma realizzata in quanto permette di raggiungere l'obiettivo primario, ovvero la trasmissione dei dati da un host a un altro. E' pertanto qui riportata la documentazione relativa alla funzione \texttt{receiveFile()} presente in \texttt{master.c}.
 
-Dopo che l'utente ha accettato il file il master invia un messaggio allo sleave comunicandogli di poter iniziare la trasmissione. Pertanto viene ricevuta la dimensione del file da ricevere.
-Successivamente si apre, con lo stesso nome del file in ricezione, un file in modalità di scrittura.
+Dopo che l'utente ha accettato il file il master invia un messaggio allo sleave comunicandogli di poter iniziare la trasmissione; viene ricevuta la dimensione del file da ricevere e successivamente, si apre, con lo stesso nome del file in ricezione, un file in modalità di scrittura.
 
 
 \begin{lstlisting}[language=C]
@@ -555,8 +551,8 @@ return 0;
 \end{lstlisting}
 
 \subsection{Argp e il parsing dei comandi}
-Grazie all'utilizzo di una piccola libreria basata su Argp di GNU  è stato possibile effettuare, in modo elegante e sicuro, il parsing dei parametri da linea di comando, in particolare, esso, infatti, ci permette di costringere l'utente all'utilizzo dei comandi designati. Analizziamo nei dettagli la sua implementazione presente in \texttt{link.c}.
-Argp ci fornisce la struttura \texttt{arpg\_option} con la quale andiamo a specificare ogni parametro utilizzato
+Grazie all'utilizzo di una piccola libreria basata su Argp di GNU  è stato possibile effettuare, in modo elegante e sicuro, il parsing dei parametri da linea di comando, in particolare, esso, infatti, ci permette di costringere l'utente all'utilizzo dei comandi designati. Analizziamo nei dettagli la sua implementazione presente in \texttt{link.c}.\\
+\texttt{Argp} ci fornisce la struttura \texttt{arpg\_option} con la quale andiamo a specificare ogni parametro utilizzato
 \begin{lstlisting}[language=C]
 struct argp_option {
     char *name;
@@ -567,6 +563,8 @@ struct argp_option {
     int   group;    
 };
 \end{lstlisting}
+In cui:
+\medskip
 \begin{description}
 	\item [\texttt{name}] rappresenta il nome dell'opzione;
 	\item [\texttt{key}] è la chiave che viene passata al parser per riconoscere l'opzione;
@@ -574,10 +572,11 @@ struct argp_option {
 	\item [\texttt{flags}] rappresenta i flag dell'opzione;
 	\item [\texttt{doc}] è una stringa di documentazione per l'opzione.
 \end{description}
+\medskip
 
-E inoltre ci mette a diposizione la struttura \texttt{argp\_state} dove vengono salvate le informazioni relative allo stato del parsing corrente.
+\noindent E inoltre ci mette a diposizione la struttura \texttt{argp\_state} dove vengono salvate le informazioni relative allo stato del parsing corrente.
 
-Pertanto andiamo a definire le opzioni che accettiamo da linea di comando, ovvero:
+\noindent Pertanto andiamo a definire le opzioni che accettiamo da linea di comando, ovvero:
 \begin{lstlisting}[language=C]
 	static struct argp_option options[] = {
   {"verbose", 'v', 0, 0, "Produce verbose output" },
@@ -589,13 +588,15 @@ Pertanto andiamo a definire le opzioni che accettiamo da linea di comando, ovver
 };
 \end{lstlisting}
 Dove abbiamo definito:
+\medskip
 \begin{description}
-	\item [\texttt{verbose}] che permette di stampare i vari passaggi dell'operazione eseguita (attualmente di default);
-	\item [\texttt{listen}] che avvia la master mode;
-	\item [\texttt{send}]  seguita dall'argomento \texttt{<filename>} che permette di attivare la sleave mode e inviare il file avente nome 					\texttt{filename};
-	\item [\texttt{setname}] seguita dall'argomento \texttt{<newname>} che permette di impostare il nuovo nome utente \texttt{newname};
-	\item [\texttt{getname}] che permette di stampare il proprio nome utente.
+	\item [\texttt{verbose}] stampa i vari passaggi dell'operazione eseguita (attualmente di default);
+	\item [\texttt{listen}] avvia la master mode;
+	\item [\texttt{send}]  seguito dall'argomento \texttt{<filename>} attiva la sleave mode e invia il file avente nome 					\texttt{filename};
+	\item [\texttt{setname}] seguito dall'argomento \texttt{<newname>} imposta il nuovo nome utente \texttt{newname};
+	\item [\texttt{getname}] stampa sullo schermo il proprio nome utente.
 \end{description}
+\medskip
 
 Successivamente ci occupiamo di definire la struttura argomenti che verrà passata ad \texttt{Argp} e viene utilizzata dal main per comunicare con la funzione \texttt{argp\_opt} che definiremo nel prossimo passaggio:
 \begin{lstlisting}[language=C]
@@ -607,7 +608,7 @@ struct arguments {
 };
 \end{lstlisting}
 
-\noindent Quindi abbiamo la funzione che, un parametro alla volta, verificare la correttezza di quanto passato e, in caso di riconoscimento setta le variabili corrispondenti, altrimenti fissa lo stato su \texttt{ARGP\_ERR\_UNKNOWN}.
+Quindi abbiamo la funzione che, un parametro alla volta, verificare la correttezza di quanto passato e, in caso di riconoscimento setta le variabili corrispondenti, altrimenti fissa lo stato su \texttt{ARGP\_ERR\_UNKNOWN}.
 In caso, invece in cui il numero di parametri passati sia superiore rispetto a quelli dovuti verrà fissato lo stato \texttt{ARGP\_KEY\_ARG} mentre terminato il parsing \texttt{ARGP\_KEY\_END}
 
 \begin{lstlisting}[language=C]
@@ -625,14 +626,14 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
       		break;
     	case 'g':
       		arguments->getName = 1;
-      		break;
+      		break;		
     	case 'n':
       		arguments->newName = arg;
-      		break;
+      		break;		
     	case 's':
       		arguments->sendFile = arg;
       		break;
-
+      		
     	case ARGP_KEY_ARG:
       		if (state->maxlen >= 2) {
         		argp_usage (state);
@@ -640,13 +641,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
       		arguments->args[state->maxlen] = arg;
       		break;
-
     	case ARGP_KEY_END:
       		if (state->maxlen < 2) {
      			argp_usage (state);
      		}
       		break;
-
     	default:
       		return ARGP_ERR_UNKNOWN;
     }
@@ -657,13 +656,13 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 
 \end{lstlisting}
 
-\noindent Andiamo dunque a costruire la struttura da passare ad argp per il parsing
+Andiamo dunque a costruire la struttura da passare ad argp per il parsing
 \begin{lstlisting}[language=C]
 static struct argp argp = { options, parse_opt, args_doc, doc };
 \end{lstlisting}
 \noindent In cui \texttt{options}, \texttt{parse\_opt} sono stati già definiti mentre \texttt{args\_doc} e \texttt{doc} sono delle stringhe contenenti rispettivamente informazioni sui parametri da passare e sull'applicazione.
 
-\noindent Nella funzione \texttt{main()} pertanto, dopo aver inizializzato la struttura \texttt{arguments}, effettuiamo la chiamata al parser di Argp
+\noindent Nella funzione \texttt{main()}, pertanto, dopo aver inizializzato la struttura \texttt{arguments}, effettuiamo la chiamata al parser di Argp
 
 \begin{lstlisting}[language=C]
 argp_parse (&argp, argc, argv, 0, 0, &arguments);
@@ -673,8 +672,9 @@ argp_parse (&argp, argc, argv, 0, 0, &arguments);
 \subsection{Chiamate di sistema}
 Un'altra parte interessante del codice sono sicuramente le chiamate a sistema che legano questa piattaforma ai sistemi operativi Unix-like.
 In particolare sono state effettuate due principali chiamate:
+\medskip
 \begin{description}
-	\item[Compressione]: per effettuare la compressione del file/cartella da inviare è stata effettuata una chiama al sistema attraverso la funzione 			\texttt{system()} presente nella \texttt{stdio.h} la quale ha permesso di chiedere al sistema operativo dell'host di eseguire il comando 				desiderato. Avendo scelto di utilizzare \texttt{tar} il comando \texttt{tarCommand} non è altro che la stringa "tar -zcf <filename>.tar.gz 			<filename>"
+	\item[Compressione]: per effettuare la compressione del file/cartella da inviare è stata effettuata una chiama al sistema attraverso la funzione 			\texttt{system()} presente nella \texttt{stdio.h} la quale ha permesso di chiedere al sistema operativo dell'host di eseguire il comando 				desiderato. Avendo scelto di utilizzare \texttt{tar}, il comando \texttt{tarCommand} non è altro che la stringa "tar -zcf <filename>.tar.gz 			<filename>"
 \end{description}
 
 \begin{lstlisting}[language=C]
@@ -683,10 +683,10 @@ In particolare sono state effettuate due principali chiamate:
 
 \begin{description}
 		
-	\item[Verifica esistenza file]: per verificare l'esistenza del file/cartella ho dovuto utilizzare i comandi della bash \texttt{[ -f <nomefile> 			]}/\texttt{[ -d <nomecartella> ]} ma, affinchè il risultato di questa chiamata fosse poi computabile è stato necessario aprire una pipe con la 			shell nella funzione \texttt{exists()}		
+	\item[Verifica esistenza file]: per verificare l'esistenza del file/cartella sono stati utilizzati i comandi della bash \texttt{[ -f <nomefile> 			]}/\texttt{[ -d <nomecartella> ]} ma, affinchè il risultato di questa chiamata fosse poi computabile è stato necessario aprire una pipe con la 			shell nella funzione \texttt{exists()}		
 \end{description}
-
-Inizialmente nella funzione \texttt{exists()} è stata modificata la chiamata al sistema in base al tipo di file da inviare, infatti, nel caso in cui sia necessario effettivamente un file la chiamata al sistema dovrà essere \texttt{[ -f <nomefile> ]} mentre, nel caso in cui si debba inviare una cartella, dovrà essere \texttt{[ -d <nomefile> ]}.
+\medskip
+Inizialmente, nella funzione \texttt{exists()}, è stata modificata la chiamata al sistema in base al tipo di file da inviare, infatti, nel caso in cui sia necessario effettivamente un file la chiamata al sistema dovrà essere \texttt{[ -f <nomefile> ]} mentre, nel caso in cui si debba inviare una cartella, dovrà essere \texttt{[ -d <nomefile> ]}.
 Pertanto il comando di sistema che verifica l'esistenza del file/cartella viene costruito in modo tale che la shell restituisca il carattere '1' in caso di esito positivo, '0 altrimenti'.
 \begin{lstlisting}[language=C]
 char exists(const char *fileName, char c) {
