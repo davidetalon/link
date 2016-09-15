@@ -153,7 +153,7 @@ Da qui l'idea di utilizzare la connessione locale per lo scambio di file.
 
 L'obiettivo primario del progetto è quello di sviluppare un'applicazione per inviare qualsiasi tipo di file tra computer connessi alla stessa rete e far in modo che tale applicazione sia disponibile per tutti i sistemi operativi Unix-like.
 Le caratteristiche principali che il prodotto finale dovrà avere saranno intuitività nell'utilizzo, velocità di trasmissione e leggerezza:
-
+\medskip
 \begin{description}
 \item[Intuitività]: l'applicazione sviluppata dovrà essere estremamente intuitiva e di facile comprensione, pertanto ci limitiamo a pochi comandi essenziali autoesplicativi.
 \item [Velocità]: l'invio dei file deve avvenire in pochi semplici passaggi e potrà sfruttare la potenza della connessione locale.
@@ -163,7 +163,7 @@ Le caratteristiche principali che il prodotto finale dovrà avere saranno intuit
 \medskip
 \noindent Inoltre, seguendo la propria passione per le telecomunicazioni, tra gli obiettivi di questo progetto vi è quello di crescere nella conoscenza delle reti e dei socket oltre che nell'intero mondo Unix.
 Volendo schematizzare gli obiettivi prefissati, si ha:
-
+\medskip
 \begin{itemize}
 \item Permettere a un utente di inviare files da un computer a un altro.
 \item Creare una applicazione multi-piattaforma disponibile per i SO Unix-like.
@@ -221,37 +221,42 @@ Puoi ottenere una copia della licenza al link
 
 \section{Idea iniziale}\index{Idea iniziale}
 
-Deciso di sviluppare un software per lo scambio di file tra computer connessi alla stessa rete, sono passato alla fase di progettazione dell'applicazione Link.
+Deciso di sviluppare un software per lo scambio di file tra computer connessi alla stessa rete, si è passati alla fase di progettazione dell'applicazione Link.
 L'idea di fondo è quella di creare un unico software che funzioni sia per la ricezione che per l'invio di dati, pertanto il software dovrà essere in grado di agire sia come server, ovvero in attesa di ricevere delle richieste, sia come client che richiede la connessione.
-L'invio di un file deve avvenire in pochi semplici passaggi, pertanto, Link permette di cercare tutti i dispositivi che sono in ascolto nella rete locale e lascia all'utente la scelta del destinatario.
-Dunque, scelto il ricevente, l'applicazione si occuperà, tramite le varie chiamate di sistema, di comprimere i dati e di tutti i controlli necessari per la trasmissione dei dati.
+L'invio di un file deve avvenire in pochi semplici passaggi; Link permette di cercare tutti i dispositivi che sono in ascolto nella rete locale e lascia all'utente la scelta del destinatario.
+Dunque, scelto il ricevente, l'applicazione si occuperà, tramite le varie chiamate di sistema, di comprimere i dati e di eseguire tutti i controlli necessari per la trasmissione dei dati.
 
 
 
 \section{Architettura}\index{Architettura software}
 
 Come già sottilineato la piattaforma deve essere in grado sia di interpretare il ruolo di server per poter ricevere i dati in ingresso, sia il ruolo di client per poter inviare i dati. Pertanto, per comprendere meglio il funzionamento dell'applicazione sono state definite due modalità operative:
+\medskip
 \begin{description}
-\item[Master mode] : è la condizione di ricezione e attesa, infatti la piattaforma si mette in ascolto su una specifica porta UDP e aspetta di ricere una richiesta da parte di qualche mittente, ricevuta la richiesta apre un socket TCP e riceve i dati in ingresso.
-\item [Sleave mode]: è la modalità con cui è possibile inviare un file, infatti, entrati in modalità sleave si cercano tutti i master in ascolto all'interno della rete e si inviano i dati.
+\item[Master mode] : è la condizione di ricezione e attesa, infatti, la piattaforma si mette in ascolto su una specifica porta UDP e aspetta di ricevere una richiesta da parte di qualche mittente, ricevuta la richiesta, apre un socket TCP e legge i dati in ingresso.
+\item [Sleave mode]: è la modalità con cui è possibile inviare un file, infatti, entrati in modalità sleave si cercano tutti i master in ascolto all'interno della rete e si trasmettono i dati.
 \end{description}
-Volendo rendere l'applicazione disponibile per sistemi operativi Unix-like la gestione delle connessioni è ricaduta sui socket di C offerti dalle API di Unix i quali hanno permesso di gestirle in modo piuttosto efficiente e di avere abbastanza libertà di decisione.
-Il problema principale nella progettazione dell'architettura del software è stata la non conoscenza della rete, infatti, generalmente, un server possiede un Ip statico, ma cosa succede con l'utilizzo del moderco DHCP in cui viene assegnato, all'interno della rete, un Ip casuale? E se la rete cambia?
-Pertanto si è pensato a un modo per interrogare tutti i master disponibili sulla rete inviando un messaggio broadcast.
-Per quanto riguarda la compressione, invece, si è scelto, per inter-compatibilità dei vari sistemi operativi di utilizzare tar disponibile, in varie versioni, su tutto il mondo Unix.
-Analizziamo, nel dettaglio il funzionamento della piattaforma nelle prossime sezioni.
+
+\medskip
+\noindent Volendo rendere l'applicazione disponibile per i sistemi operativi Unix-like la gestione delle connessioni è ricaduta sui \texttt{socket} di C offerti dalle API di Unix i quali hanno permesso di gestirle in modo piuttosto efficiente e di avere abbastanza libertà di decisione.\\
+\noindent Il problema principale nella progettazione dell'architettura software è stata la non conoscenza della rete, infatti, generalmente, un server possiede un Ip statico, ma cosa succede con l'utilizzo del moderno DHCP in cui viene assegnato, all'interno della rete, un Ip casuale? E se la rete cambia?\\
+\noindent Pertanto si è pensato a un modo per interrogare tutti i master disponibili sulla rete inviando un messaggio broadcast.\\
+\noindent Per quanto riguarda la compressione, invece, si è scelto, per inter-compatibilità dei vari sistemi operativi di utilizzare \texttt{tar} disponibile, in varie versioni, su tutto il mondo Unix.\\
+\noindent Analizziamo, nel dettaglio il funzionamento della piattaforma nelle prossime sezioni.
 
 \subsection{Socket}
 Per comprendere a fondo come è stata progettata l'applicazione è necessario, innanzitutto, comprendere cosa sono i Socket e il loro funzionamento.
-I socket fanno parte della IPC (interprocess communication facilities) di Unix e permettono lo scambio di dati, oltre che sulla stessa macchina, anche tra più host connessi alla rete. In particolare supponiamo di trovarci davanti alla classica architettura Client/Server:
+I socket fanno parte della IPC (interprocess communication facilities) di Unix e permettono lo scambio di dati, oltre che sulla stessa macchina, anche tra più host connessi alla rete. Supponiamo di trovarci davanti alla classica architettura Client/Server:
+\medskip
 
 \begin{itemize}
 	\item Ogni applicazione, sia lato server, che lato client, apre un socket ovvero una interfaccia che permette alle due applicazioni di comunicare l'una con l'altra
 	\item Il server binda il socket su indirizzo conosciuto in modo che il client possa connettersi a lui
 \end{itemize}
-
+\medskip
 Pertanto una trasmissione dati, a livello software, è caratterizzata da una coppia di socket che identificano rispettivamente il client e server
 Nella piattaforma Link saranno necessari principalmente due tipo di Socket:
+\medskip
 \begin{itemize}
 	\item  \texttt{SOCK\_STREAM} i socket di tipo stream ci permettono un canale di comunicazione affidabile, orientato alla connessione e byte-stream, ovvero:
 	\begin{description}
@@ -262,9 +267,10 @@ Nella piattaforma Link saranno necessari principalmente due tipo di Socket:
 	\obeylines
 	\item	\texttt{SOCK\_DGRAM} i socket di tipo datagram ci permettono di inviare dati in modo più veloce, senza però assicurarci che la trasmissione dei dati sia corretta, essi infatti possono arrivare sbagliati al destinatario, non arrivare o arrivare in ordine diverso da quello di partenza
 \end{itemize}
-In particolare verranno utilizzati i socket di tipo \texttt{AF\_INET} che permette lo scambio di dati tra host connessi in rete tramite il protocolo \textit{Ipv4}.
+\medskip
+\noindent In particolare verranno utilizzati i socket di tipo \texttt{AF\_INET} che permette lo scambio di dati tra host connessi in rete tramite il protocolo \textit{Ipv4}.
 
-Per bindare il socket del server, ovvero assegnargli un indirizzo noto dovremmo assegnargli una precisa porta in cui ascoltare, mentre per quanto riguarda l'indirizzo Ip, possiamo assegnargli tranquillamente \texttt{INADDR\_ANY} ovvero l'interfaccia di loopback che permette di indirizzare il socket su tutte le interfacce di rete disponibili.
+\noindent Per bindare il socket del server, ovvero assegnargli un indirizzo noto dovremmo assegnargli una precisa porta in cui ascoltare, mentre per quanto riguarda l'indirizzo Ip, possiamo assegnargli tranquillamente \texttt{INADDR\_ANY} ovvero l'interfaccia di loopback che permette di indirizzare il socket su tutte le interfacce di rete disponibili.
 
 \begin{remark}
 	Uteriori informazioni sui socket e il loro funzionamento, insieme ad innumerevoli esempi possono essere trovati alla pagina \url http://http://www.beej.us/guide/bgnet/ e su \textit{The linux programming interface: A Linux and UNIX System Programming Handbook, M. Kerrisk, Nostark, 2010.}
@@ -282,18 +288,12 @@ Per bindare il socket del server, ovvero assegnargli un indirizzo noto dovremmo 
 \subsection{Sleave}
 Come già anticipato, nella modalità sleave è possibile inviare i file al destinatario scelto, per far questo entrati nella sleave mode la piattaforma apre un socket UDP sulla porta 1234 e invia un messaggio in broadcast sulla porta 1235 interrogando tutti i Link master in ascolto sulla rete locale.
 Viene, infatti, inviata la richiesta \texttt{LINKAPP/CLNTRQT/SRVON?/} e si mette in ascolto delle eventuali risposte da parte dei master disponibili.
-Verificata la correttezza della risposta, dunque, tutti i master disponibili e validi vengono messi in un array contenente il loro nome e l'indirizzo del loro socket.
+Verificata la correttezza della risposta, dunque, tutti i master validi vengono messi in un array contenente il loro nome e l'indirizzo del loro socket.
 A questo punto l'applicazione, elencando i vari master disponibili nella rete, permette, in modo interattivo, di scegliere il destinatario e di inviare i file.
 La piattaforma si preoccupa, quindi, di preparare il file da trasmettere comprimendolo come specificato nei prossimi paragrafi.
 In particolar modo, conoscendo l'indirizzo del ricevente, lo sleave apre un socket TCP sulla porta 2345, effettua una richiesta di connessione al master scelto e, inviando nei primi byte trasmessi il messaggio \texttt{LINKAPP/SLVNAME/<nomesleave>/FNAME/<nomefiledainviare>}, chiede se accetta di ricevere il file.
 Vengono dunque raccolte informazioni sul file da trasmettere e in particolare la dimensione del file, la quale viene inviata al master connesso.
-Il file viene dunque aperto in lettura e inviato allo sleave senza caricarlo interamente in memoria centrale ma limitandosi a un buffer di 4 Byte.
-
-\subsection{Master}
-Per quanto riguarda la modalità master, inizialmente viene aperto un socket UDP il quale si mette in ascolto sulla porta 1235 e eventuali richieste da parte degli sleave. Ricevuta la richesta e validata,il master, dunque, risponde al richiedente con il messaggio di servizio \texttt{LINKAPP/SRVON/<nomemaster>}.
-Quindi, dopo aver inviato le proprie informazioni, la piattaforma apre un socket TCP sulla porta 2346 e resta in attesa delle richieste di connessione.
-Stabilita la connessione, viene ricevuta la richiesta del file da trasmettere e una volta validata, viene lasciata la libertà all'utente di accettare o meno lo scambio di file. In caso di esito negativo, il master invia il messaggio  \texttt{LINKAPP/SEND/NOTACCEPTED/} e si occupa della chiusura della connessione mentre, in caso contrario, si procede con la trasmissione dei dati rispondendo con \texttt{LINKAPP/SEND/ACCEPTED/}.
-A questo punto viene ricevuta la dimensione del file trasmesso e si continua a ricevere il file finchè non è stato interamente ricevuto, ovvero finchè il numero di byte letti in entrata non corrisponde alla dimensione del file.
+Il file viene dunque aperto in lettura e inviato allo sleave senza caricarlo interamente in memoria centrale ma limitandosi a un buffer di 4 MB.
 
 \begin{figure}[h]
 	\centering
@@ -306,14 +306,27 @@ A questo punto viene ricevuta la dimensione del file trasmesso e si continua a r
     \label{fig:awesome_image}
 \end{figure}
 
+\subsection{Master}
+Per quanto riguarda la modalità master, inizialmente viene aperto un socket UDP il quale si mette in ascolto sulla porta 1235 di eventuali richieste da parte degli sleave. Ricevuta e validata la richesta,il master, dunque, risponde al richiedente con il messaggio di servizio \texttt{LINKAPP/SRVON/<nomemaster>}.
+Quindi, dopo aver inviato le proprie informazioni, la piattaforma apre un socket TCP sulla porta 2346 e resta in attesa delle richieste di connessione.
+Stabilita la connessione, viene ricevuta la richiesta del file da trasmettere e una, volta validata, viene lasciata la libertà all'utente di accettare o meno lo scambio di file. In caso di esito negativo, il master invia il messaggio  \texttt{LINKAPP/SEND/NOTACCEPTED/} e si occupa della chiusura della connessione mentre, in caso contrario, si procede con la trasmissione dei dati rispondendo con \texttt{LINKAPP/SEND/ACCEPTED/}.
+A questo punto viene ricevuta la dimensione del file trasmesso e si continua a ricevere il file finchè non è stato interamente ricevuto, ovvero finchè il numero di byte letti in entrata non corrisponde alla dimensione del file.
+
+\begin{figure}[h]
+	\centering
+    \includegraphics[width=0.77\textwidth]{protocollo.png}
+    \caption{Schema del funzionamento della trasmissione dati tra master e sleave.}
+    \label{fig:awesome_image}
+\end{figure}
+
 
 \subsection{Compressione dati}\label{Compressione}
-Per semplicità e,affinchè fosse possibile comprimere, non sono un singolo file, ma anche una cartella con tutto il suo sottoalbero ho evitato di utilizzare  zlib (solitamente utilizzato in C) ma il meccanismo di  compressione dati è affidato al sistema operativo, in particolare si è scelto di effettuare delle chiamate al sistema per invocare \texttt{tar} applicazione che permette di comprimere file, cartelle e disponibile in tutti i sistemi Unix-like.
-In particolare, dopo svariate ricerche, si è scoperto che OS X presenta la versione \texttt{bsdtar}, differente dalla tradizionale GNU tar, ma comunque compatibile.
+Per semplicità e,affinchè fosse possibile comprimere, non solo un singolo file, ma anche una cartella con tutto il suo sottoalbero si è evitato di utilizzare  \texttt{zlib} (solitamente utilizzato in C) ma il meccanismo di  compressione dati è affidato al sistema operativo, in particolare si è scelto di effettuare delle chiamate al sistema per invocare \texttt{tar} applicazione che permette di comprimere file, cartelle e disponibile in tutti i sistemi Unix-like.
+Dopo svariate ricerche, si è scoperto che OS X presenta la versione \texttt{bsdtar}, differente dalla tradizionale GNU \texttt{tar}, ma comunque compatibile.
 
 \subsection{Interfaccia utente}
-Tra gli obiettivi vi è quello di creare una interfaccia utente piuttosto semplice, pertanto, pur non essendoci una interfaccia grafica si è scelto di utilizzare dei comandi semplici e autoesplicativa attraverso il passaggio di parametri da riga di comando.
-Viene pertanto effettuato un parsing dei parametri utilizzando una versione minimizzata di Argp che permette di verificare la correttezza dei parametri passati e, in caso di errore, aiutare l'utente attraverso l' \texttt{---help}.
+Tra gli obiettivi vi è quello di creare una interfaccia utente piuttosto semplice, pertanto, pur non essendoci una interfaccia grafica si è scelto di utilizzare dei comandi semplici e autoesplicativi attraverso il passaggio di parametri da riga di comando.
+Viene pertanto effettuato un parsing dei parametri utilizzando una versione minimizzata di \texttt{Argp} che permette di verificare la correttezza dei parametri passati e, in caso di errore, aiutare l'utente attraverso l' \texttt{---help}.
 
 %----------------------------------------------------------------------------------------
 %	CHAPTER 3
