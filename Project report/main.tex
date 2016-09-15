@@ -888,30 +888,37 @@ Osservando l'output dei terminali relativi allo sleave e al master è possibile 
 
 \section{Lavoro futuro}
 L'applicazione si trova tuttora a uno stato embrionale, infatti, possono essere fatte numerose interessanti modifiche che permettono di estenderne le funzionalità e di allargarne l'utenza. 
-Alcune interessanti idee sono sicuramente:
+Alcune idee sono sicuramente:
+\medskip
 \begin{description}
 	\item[Correzione bugs]: risolvere i problemi attualmente riscontrati
 	\item[Porting su Windows]: uno dei prossimi obiettivi sarà sicuramente quello di rendere disponibile l'applicazione anche per utenti Windows 			permettendo dunque di raggiungere la gran parte del mercato. Ciò comporta un carico di lavoro abbastanza elevato,in quanto, non solo dobbiamo 			adattare i socket a Winsock ma dobbiamo adattare le varie chiamate del sistema, in particolare:
 			\begin{itemize}
 				\item la verifica dell'esistenza o meno del file da inviare
-				\item la compressione dei dati da inviare, infatti Windows non fornisce una libreria  per la compressione di dati,contrariamente a 					quanto avviene nei sistemi Unix-like
+				\item la compressione dei dati da inviare, infatti Windows non fornisce una libreria  per la compressione di dati, contrariamente a 					quanto avviene nei sistemi Unix-like
 			\end{itemize}
 	\item[Introduzione crittografia end-to-end]: è possibile introdurre una crittografia E2EE per rendere la trasmissione dei file sicura e 				impenetrabile contro i malintenzionati
 	\item[Più formati di compressione]: è inoltre doveroso implementare più sistemi di compressione per lasciare all'utente la possibilità di 				scegliere il formato di compressione desiderato
 \end{description}
 
-Ci si augura di poter continuare a lavorare sul progetto in quanto le soddisfazioni e le conoscenze tecniche aumentano in maniera esponenziale.
+Si augura di poter continuare a lavorare sul progetto in quanto le soddisfazioni e le conoscenze tecniche aumentano in maniera esponenziale.
 
 
 \section{Conclusioni}
-Posso ritenermi soddisfatto di quanto realizzato in questo progetto in quanto, oltre ad avermi permesso di risolvere un problema che affrontavo quotidianamente, mi ha dato l'occasione di accrescere le mie conoscenze sulla programmazione e in particolare sui principi fondamentali delle trasmissioni di dati.
-Durante la fase di progettazione e di implementazione ho affrontato problematiche mai incontrate  prima (un po' per le novità del linguaggio un po' per generale inesperienza) come ad esempio il parsing efficiente dei comandi da riga di comando o la necessità, in una trasmissione dati, di tener traccia di quanto effettivamente inviato e ricevuto.
+Ci si può ritenere soddisfatti di quanto realizzato in questo progetto in quanto, oltre ad aver permesso di risolvere un problema quotidiano, ha dato l'occasione di accrescere le personali conoscenze sulla programmazione e in particolare sui principi fondamentali delle trasmissioni di dati.
+Durante la fase di progettazione e di implementazione sono state affrontate problematiche mai incontrate  prima (un po' per le novità del linguaggio un po' per generale inesperienza) come ad esempio il parsing efficiente dei comandi da riga di comando o la necessità, in una trasmissione dati, di tener traccia di quanto effettivamente inviato e ricevuto.
 
-Inoltre confrontarmi con la documentazione scritta da altri programmatori mi ha permesso di comprendere quanto sia importante, non solo commentare il codice, ma anche redarre una documentazione chiara e completa.
-Infine per la prima volta mi sono imbattuto in un potente strumento come CMake utile per lo sviluppo di codice da distribuire.
+Inoltre confrontarsi con la documentazione scritta da altri programmatori ha permesso di comprendere quanto sia importante, non solo commentare il codice, ma anche redarre una documentazione chiara e completa.\\
 
-Ringrazio in particolar modo \url http://stackoverflow.com/ e tutta la sua community per tutti i preziosi consigli suggeritimi.
+Si ringrazia in particolar modo \url http://stackoverflow.com/ e tutta la sua community per tutti i preziosi consigli suggeritimi.
 
+
+\newpage
+\pagestyle{empty}
+\null
 \vfill
 \textit{Davide Talon}
+\clearpage
+
+
 \end{document}
