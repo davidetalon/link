@@ -133,34 +133,36 @@ Seguendo il corso Laboratorio di ingegneria informatica il cui obiettivo è l'ac
 Realizzazione di un progetto individuale su un argomento di proprio interesse.
 \end{quote}
 
-Pertanto, pensando ai possibili sviluppi, mi sono imbattuto in un problema pratico.
+\noindent Pertanto, pensando ai possibili sviluppi, mi sono imbattuto in un problema pratico.
 Quante volte ci è capitato, in casa o in ufficio, di dover scambiare dei file tra computer vicini e di utilizzare le classiche introvabili chiavette o l'email il cui upload è lentissimo?
-Nonostante l'avanzare della tecnologia, però, non disponiamo ancora di un metodo semplice e veloce per lo scambio di file tra computer vicini e in particolare per computer connessi alla stessa rete.
+Nonostante l'avanzare della tecnologia, infatti, non disponiamo ancora di un metodo semplice e veloce per lo scambio di file tra computer vicini e, in particolare, per computer connessi alla stessa rete.
 Gli utenti Apple già conoscono l'utilità di Airdrop che consente di inviare documenti, immagini e video ai computer vicini creando una rete ad hoc, ma perchè non estendere questa funzionalità a Linux, comprendendo dunque tutti i sistemi operativi Unix-like?
-Nasce, dunque, la necessità di avere una applicazione multi-piattaforma che permette, in modo facile e veloce di inviare file da un computer a un altro.
-Con l'occasione del Laboratorio di ingegneria informatica e la possibilità di sviluppare un progetto inerente ai propri interessi nasce l'applicazione Link che permette, a due computer connessi alla stessa rete, di scambiarsi dei file.
+Nasce, dunque, la necessità di avere una applicazione multi-piattaforma che permette, in modo facile e veloce, di inviare file da un computer a un altro.
 
 
-\section{Motivazione}\index{Motivazioni}
+
+\section{Motivazioni}\index{Motivazioni}
 
 Con l'occasione del Laboratorio di ingegneria informatica e la possibilità di sviluppare un progetto inerente ai propri interessi nasce l'applicazione Link che permette, a due computer connessi alla stessa rete, di scambiarsi dei file.
 Questo progetto, infatti, parte principalmente dalla propria passione per internet e le telecomunicazioni, un mondo che mi appassiona e entusiasma facendomi capire la potenza delle nuove tecnologie.
-Tante volte mi è capitato di dover inviare dei file da un computer ad un altro e mi sono sempre chiesto quale fosse un metodo pratico e veloce per farlo, quindi ciò che mi ha personalmente spinto allo sviluppo di questo progetto è la ricerca di una soluzione personale per risolvere un problema che incontro spesso nella vita quotidiana.
+Tante volte mi è capitato di dover inviare dei file da un computer ad un altro e mi sono sempre chiesto quale fosse un metodo pratico e veloce per farlo, quindi ciò che ha spinto allo sviluppo di questo progetto è la ricerca di una soluzione personale per risolvere un problema che si incontra spesso nella vita quotidiana.
 Da qui l'idea di utilizzare la connessione locale per lo scambio di file.
 
 \section{Obiettivi}\index{Obiettivi}
 
 
-L'obiettivo del progetto è, dunque, quello di sviluppare un'applicazione per inviare qualsiasi tipo di file tra computer connessi alla stessa rete e far in modo che tale applicazione sia disponibile per tutti i sistemi operativi Unix-like.
-Quindi le caratteristiche principali che il prodotto finale dovrà avere saranno intuitività nell'utilizzo, velocità di trasmissione e leggerezza:
+L'obiettivo primario del progetto è quello di sviluppare un'applicazione per inviare qualsiasi tipo di file tra computer connessi alla stessa rete e far in modo che tale applicazione sia disponibile per tutti i sistemi operativi Unix-like.
+Le caratteristiche principali che il prodotto finale dovrà avere saranno intuitività nell'utilizzo, velocità di trasmissione e leggerezza:
 
 \begin{description}
-\item[Intuitività] Intuitività: l'applicazione sviluppata dovrà essere estremamente intuitiva e di facile comprensione, pertanto ci limitiamo a pochi comandi essenziali autoesplicativi.
+\item[Intuitività]: l'applicazione sviluppata dovrà essere estremamente intuitiva e di facile comprensione, pertanto ci limitiamo a pochi comandi essenziali autoesplicativi.
 \item [Velocità]: l'invio dei file deve avvenire in pochi semplici passaggi e potrà sfruttare la potenza della connessione locale.
 \item [Leggerezza]: il programma sarà estremamente leggero e permetterà di inviare file di dimensioni arbitrariamente grandi senza doverli completamente caricare nella RAM, non influenzando le prestazioni generali del sistema durante l'esecuzione.
 \end{description}
 
-Inoltre, seguendo la propria passione per le telecomunicazioni, tra gli obiettivi di questo progetto vi è quello di crescere nella conoscenza delle reti e dei socket oltre che nell'intero mondo Unix. Pertanto, volendo schematizzare gli obiettivi prefissati, abbiamo:
+\medskip
+\noindent Inoltre, seguendo la propria passione per le telecomunicazioni, tra gli obiettivi di questo progetto vi è quello di crescere nella conoscenza delle reti e dei socket oltre che nell'intero mondo Unix.
+Volendo schematizzare gli obiettivi prefissati, si ha:
 
 \begin{itemize}
 \item Permettere a un utente di inviare files da un computer a un altro.
@@ -171,30 +173,32 @@ Inoltre, seguendo la propria passione per le telecomunicazioni, tra gli obiettiv
 \end{itemize}
 
 \section{Link utili e installazione}\index{Link utili e installazione}
-L'intero progetto, comprensivo di report finale e slides di presentazione è disponibile sia su Bitbucket \url https://bitbucket.org/davidetalon/link sia su GitHub alla pagina \url https://github.com/davidetalon/link da cui si possono scaricare i file sorgenti e quanto necessario per l'intallazione dell'applicazione.
-In particolare per l'intallazione dell'applicazione:
+L'intero progetto, comprensivo di report finale e slides di presentazione è disponibile sia su Bitbucket \url https://bitbucket.org/davidetalon/link sia su GitHub alla pagina \url https://github.com/davidetalon/link da cui si possono scaricare i file sorgenti e quanto necessario per l'intallazione dell'applicazione.\\
+\noindent In particolare per l'intallazione dell'applicazione:
 
 \begin{enumerate}
 	\item Crea la cartella dove installare link e spostati al suo interno
-     	\begin{verbatim}
-     	$ mkdir link
-     	$ cd link
-     	\end{verbatim}
+\begin{verbatim}
+$ mkdir link
+$ cd link
+\end{verbatim}
     \item Scarica la repository da GitHub
-    		\begin{verbatim}
-    		$ git clone https://github.com/davidetalon/link.git
-    		\end{verbatim}
+\begin{verbatim}
+$ git clone https://github.com/davidetalon/link.git
+\end{verbatim}
     \item Compila tramite Cmake (è richiesta almeno la versione 3.4)
-    		\begin{verbatim}
-      	$ cmake .
-       	$ make
-     	\end{verbatim}
+\begin{verbatim}
+$ cmake .
+$ make
+\end{verbatim}
      \item Ti suggerisco di aggiungere link al path di sistema
-     	\begin{verbatim} $ PATH=<path to link>:$PATH
-     	\end{verbatim}
+\begin{verbatim}
+$ PATH=<path to link>:$PATH
+\end{verbatim}
 	\item Ora puoi conoscere link utilizzando il suo help
-		\begin{verbatim}$ link --help
-		\end{verbatim}
+\begin{verbatim}
+$ link --help
+\end{verbatim}
              
 \end{enumerate}
 
