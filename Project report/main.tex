@@ -734,8 +734,8 @@ Quindi, per poter utilizzare il risultato di tale chiama, vi è la necessità di
 \chapter{Valutazione e collaudo}
 
 \section{Testing sul campo}
-La fase di sviluppo dell'applicazione è stata un susseguirsi di implementazione e testing delle nuove funzionalità. In particolare, sfruttando il fatto che master e sleave lavorano con socket bindati a porte differenti, è stato possibile testare la piattaforma semplicemente utilizzando in parallelo due shell di comando in cui da una parte si attiva la masterMode, mentre dall'altra la sleaveMode.
-Riportiamo di seguito il risultato dei test principali eseguiti, comprensivi di messaggi utili per la comprensione di quanto l'applicazione sta realmente facendo, a sinistra avremo il master, mentre a destra abbiamo lo sleave:
+La fase di sviluppo dell'applicazione è stata un susseguirsi di implementazione e testing delle nuove funzionalità. In particolare, sfruttando il fatto che master e sleave lavorano con socket bindati a porte differenti, è stato possibile testare la piattaforma semplicemente utilizzando in parallelo due shell di comando in cui da una parte si attiva la master mode, mentre dall'altra la sleave mode.\\
+Riportiamo di seguito il risultato dei test principali eseguiti, comprensivi di messaggi utili per la comprensione di quanto l'applicazione sta realmente facendo, a sinistra abbiamo il master, mentre a destra lo sleave:
 
 \begin{Parallel}{0.5\textwidth}{0.5\textwidth}
 \ParallelLText{
@@ -748,12 +748,6 @@ Waiting for sleave...
 \ParallelRText{
 \begin{lstlisting}[language=Bash]
 MacBook-Pro-di-Davide-3:sleave davidetalon$ link --send canzone.mp3
-Broadcast sent: LINKAPP/CLNTRQT/SRVON?
-Waiting for master response...
-1 masters found
-
-0. Tallo
-Scegliere un master valido:
 \end{lstlisting}
 }
 \ParallelPar
@@ -780,12 +774,7 @@ Waiting for master response...
 1 masters found
 
 0. Tallo
-Scegliere un master valido: 0
-Connetcting to Tallo...
-Connection enstabilished.
-tarCommand command: tar -zcf canzone.mp3.tar.gz canzone.mp3
-Header sent: LINKAPP/SLVNAME/Tallo/FNAME/canzone.mp3.tar.gz/
-Header size: 336
+Scegliere un master valido:
 \end{lstlisting}
 }
 \ParallelPar
@@ -823,19 +812,34 @@ Connection enstabilished.
 tarCommand command: tar -zcf canzone.mp3.tar.gz canzone.mp3
 Header sent: LINKAPP/SLVNAME/Tallo/FNAME/canzone.mp3.tar.gz/
 Header size: 336
+\end{lstlisting}
+}
+\ParallelPar
+\end{Parallel}
+
+Grazie all'header precedentemente trasmesso il master ha le informazioni necessarie per chiedere all'utente se desidera accettare il file in ingresso, nella master mode, invece, una volta che il file è stato accettato, viene inviato con successo.
+
+\begin{lstlisting}[language=Bash]
+MacBook-Pro-di-Davide-3:sleave davidetalon$ link --send canzone.mp3
+Broadcast sent: LINKAPP/CLNTRQT/SRVON?
+Waiting for master response...
+1 masters found
+
+0. Tallo
+Scegliere un master valido: 0
+Connetcting to Tallo...
+Connection enstabilished.
+tarCommand command: tar -zcf canzone.mp3.tar.gz canzone.mp3
+Header sent: LINKAPP/SLVNAME/Tallo/FNAME/canzone.mp3.tar.gz/
+Header size: 336
 Server response: LINKAPP/SEND/ACCEPTED/
 Opening file canzone.mp3.tar.gz ...
 size: 7210143
 Remove command: rm -r canzone.mp3.tar.gz
 File succefully sent.
 \end{lstlisting}
-}
-\ParallelPar
-\end{Parallel}
 
-Grazie all'header precedentemente trasmesso il master ha le informazioni necessarie per chiedere all'utente se desidera accettare il file in ingresso, nella master mode, invece, una volta che il file è stato accettato esso viene inviato con successo.
-
-\noindent Infine notiamo come il file sia realmente giunto a destinazione e sia valido, infatti è possibile estrarlo.
+Infine notiamo come il file sia realmente giunto a destinazione e sia valido, infatti è possibile estrarlo.
 
 \begin{lstlisting}[language=Bash]
 MacBook-Pro-di-Davide-3:master davidetalon$ link --listen
@@ -858,16 +862,17 @@ MacBook-Pro-di-Davide-3:master davidetalon$ ls
 canzone.mp3.tar.gz
 MacBook-Pro-di-Davide-3:master davidetalon$ tar -xzf canzone.mp3.tar.gz
 MacBook-Pro-di-Davide-3:master davidetalon$ ls
-canzone.mp3		canzone.mp3.tar.gz
+canzone.mp3 canzone.mp3.tar.gz
 \end{lstlisting}
 
 
 \section{Valutazione e bug riscontrati}
 Osservando l'output dei terminali relativi allo sleave e al master è possibile confermare la correttezza dei risultati e verificare il soddisfamento delle specifiche che avevamo prefissato come obiettivo. Tuttavia sono stati riscontrati alcuni bug che compaioni in determinate condizioni:
+\medskip
 \begin{description}
 	\item[Unrecoverable error]: alcune volte capita che, nel socket UDP dello sleave, la \texttt{recvfrom()} dia "Unrecoverable error" errno = 9 Bad 		file number (motivo non ancora identificato);
 	\item[File name invalid encoding]: nella trasmissione dati da un sistema operativo OS X ad Ubuntu il nome del file assume una codifica non 			valida, tale problema è dovuto alla differente codifica dei caratteri nei due sistemi operativi;
-	\item[Address already in use]: lo sleave tentando di connettersi al server (TCP) utilizza un indirizza già in uso 
+	\item[Address already in use]: lo sleave tentando di connettersi al server (TCP) utilizza un indirizza già in uso. 
 \end{description}
 
 
