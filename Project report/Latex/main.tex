@@ -234,7 +234,7 @@ Come già sottilineato la piattaforma deve essere in grado sia di interpretare i
 \medskip
 \begin{description}
 \item[Master mode] : è la condizione di ricezione e attesa, infatti, la piattaforma si mette in ascolto su una specifica porta UDP e aspetta di ricevere una richiesta da parte di qualche mittente, ricevuta la richiesta, apre un socket TCP e legge i dati in ingresso.
-\item [Sleave mode]: è la modalità con cui è possibile inviare un file, infatti, entrati in modalità sleave si cercano tutti i master in ascolto all'interno della rete e si trasmettono i dati.
+\item [Slave mode]: è la modalità con cui è possibile inviare un file, infatti, entrati in modalità slave si cercano tutti i master in ascolto all'interno della rete e si trasmettono i dati.
 \end{description}
 
 \medskip
@@ -285,29 +285,29 @@ Nella piattaforma Link saranno necessari principalmente due tipo di Socket:
 \end{figure}
 
 
-\subsection{Sleave}
-Come già anticipato, nella modalità sleave è possibile inviare i file al destinatario scelto, per far questo entrati nella sleave mode la piattaforma apre un socket UDP sulla porta 1234 e invia un messaggio in broadcast sulla porta 1235 interrogando tutti i Link master in ascolto sulla rete locale.
+\subsection{Slave}
+Come già anticipato, nella modalità slave è possibile inviare i file al destinatario scelto, per far questo entrati nella slave mode la piattaforma apre un socket UDP sulla porta 1234 e invia un messaggio in broadcast sulla porta 1235 interrogando tutti i Link master in ascolto sulla rete locale.
 Viene, infatti, inviata la richiesta \texttt{LINKAPP/CLNTRQT/SRVON?/} e si mette in ascolto delle eventuali risposte da parte dei master disponibili.
 Verificata la correttezza della risposta, dunque, tutti i master validi vengono messi in un array contenente il loro nome e l'indirizzo del loro socket.
 A questo punto l'applicazione, elencando i vari master disponibili nella rete, permette, in modo interattivo, di scegliere il destinatario e di inviare i file.
 La piattaforma si preoccupa, quindi, di preparare il file da trasmettere comprimendolo come specificato nei prossimi paragrafi.
-In particolar modo, conoscendo l'indirizzo del ricevente, lo sleave apre un socket TCP sulla porta 2345, effettua una richiesta di connessione al master scelto e, inviando nei primi byte trasmessi il messaggio \texttt{LINKAPP/SLVNAME/<nomesleave>/FNAME/<nomefiledainviare>}, chiede se accetta di ricevere il file.
+In particolar modo, conoscendo l'indirizzo del ricevente, lo slave apre un socket TCP sulla porta 2345, effettua una richiesta di connessione al master scelto e, inviando nei primi byte trasmessi il messaggio \texttt{LINKAPP/SLVNAME/<nomeslave>/FNAME/<nomefiledainviare>}, chiede se accetta di ricevere il file.
 Vengono dunque raccolte informazioni sul file da trasmettere e in particolare la dimensione del file, la quale viene inviata al master connesso.
-Il file viene dunque aperto in lettura e inviato allo sleave senza caricarlo interamente in memoria centrale ma limitandosi a un buffer di 4 MB.
+Il file viene dunque aperto in lettura e inviato allo slave senza caricarlo interamente in memoria centrale ma limitandosi a un buffer di 4 MB.
 
 \begin{figure}[h]
 	\centering
     \includegraphics[width=0.77\textwidth]{broadcast.png}
-    \caption{Lo sleave invia un messaggio in broadcast per conoscere la rete in cui si trova.}
+    \caption{Lo slave invia un messaggio in broadcast per conoscere la rete in cui si trova.}
     \label{fig:awesome_image}
 	\centering
     \includegraphics[width=0.77\textwidth]{serveron.png}
-    \caption{I master disponibili rispondono alla richiesta dello sleave confermando di essere attivi.}
+    \caption{I master disponibili rispondono alla richiesta dello slave confermando di essere attivi.}
     \label{fig:awesome_image}
 \end{figure}
 
 \subsection{Master}
-Per quanto riguarda la modalità master, inizialmente viene aperto un socket UDP il quale si mette in ascolto sulla porta 1235 di eventuali richieste da parte degli sleave. Ricevuta e validata la richesta,il master, dunque, risponde al richiedente con il messaggio di servizio \texttt{LINKAPP/SRVON/<nomemaster>}.
+Per quanto riguarda la modalità master, inizialmente viene aperto un socket UDP il quale si mette in ascolto sulla porta 1235 di eventuali richieste da parte degli slave. Ricevuta e validata la richesta,il master, dunque, risponde al richiedente con il messaggio di servizio \texttt{LINKAPP/SRVON/<nomemaster>}.
 Quindi, dopo aver inviato le proprie informazioni, la piattaforma apre un socket TCP sulla porta 2346 e resta in attesa delle richieste di connessione.
 Stabilita la connessione, viene ricevuta la richiesta del file da trasmettere e una, volta validata, viene lasciata la libertà all'utente di accettare o meno lo scambio di file. In caso di esito negativo, il master invia il messaggio  \texttt{LINKAPP/SEND/NOTACCEPTED/} e si occupa della chiusura della connessione mentre, in caso contrario, si procede con la trasmissione dei dati rispondendo con \texttt{LINKAPP/SEND/ACCEPTED/}.
 A questo punto viene ricevuta la dimensione del file trasmesso e si continua a ricevere il file finchè non è stato interamente ricevuto, ovvero finchè il numero di byte letti in entrata non corrisponde alla dimensione del file.
@@ -315,7 +315,7 @@ A questo punto viene ricevuta la dimensione del file trasmesso e si continua a r
 \begin{figure}[h]
 	\centering
     \includegraphics[width=0.77\textwidth]{protocollo.png}
-    \caption{Schema del funzionamento della trasmissione dati tra master e sleave.}
+    \caption{Schema del funzionamento della trasmissione dati tra master e slave.}
     \label{fig:awesome_image}
 \end{figure}
 
@@ -444,7 +444,7 @@ if (tcpSrvSock < 0) {
 }
 \end{lstlisting}
 
-Nella parte successiva, invece il socket viene bindato, ovvero si associa il socket a uno specifico indirizzo assegnato, in questo caso a \texttt{tcpSrvSockAddr}, e vi è una chiamata alla funzione \texttt{openTcpSrv()} passando come parametri il socket creato, il suo indirizzo comprensivo di dimensione, l'indirizzo e la dimensione del socket dello sleave e infine la connessione accettata.
+Nella parte successiva, invece il socket viene bindato, ovvero si associa il socket a uno specifico indirizzo assegnato, in questo caso a \texttt{tcpSrvSockAddr}, e vi è una chiamata alla funzione \texttt{openTcpSrv()} passando come parametri il socket creato, il suo indirizzo comprensivo di dimensione, l'indirizzo e la dimensione del socket dello slave e infine la connessione accettata.
 
 \begin{lstlisting}[language=C]
 if (bind(tcpSrvSock, (struct sockaddr *) &tcpSrvSockAddr, tcpClntSockAddrLen) < 0) {
@@ -499,7 +499,7 @@ int openTcpSrv(const int tcpSrvSock, struct sockaddr_in *tcpSrvSockAddr, const i
 \subsection{Ricezione del file}
 Sicuramente la ricezione del file rappresenta il cuore della piattaforma realizzata in quanto permette di raggiungere l'obiettivo primario, ovvero la trasmissione dei dati da un host a un altro. E' pertanto qui riportata la documentazione relativa alla funzione \texttt{receiveFile()} presente in \texttt{master.c}.
 
-Dopo che l'utente ha accettato il file il master invia un messaggio allo sleave comunicandogli di poter iniziare la trasmissione; viene ricevuta la dimensione del file da ricevere e successivamente, si apre, con lo stesso nome del file in ricezione, un file in modalità di scrittura.
+Dopo che l'utente ha accettato il file il master invia un messaggio allo slave comunicandogli di poter iniziare la trasmissione; viene ricevuta la dimensione del file da ricevere e successivamente, si apre, con lo stesso nome del file in ricezione, un file in modalità di scrittura.
 
 
 \begin{lstlisting}[language=C]
@@ -592,7 +592,7 @@ Dove abbiamo definito:
 \begin{description}
 	\item [\texttt{verbose}] stampa i vari passaggi dell'operazione eseguita (attualmente di default);
 	\item [\texttt{listen}] avvia la master mode;
-	\item [\texttt{send}]  seguito dall'argomento \texttt{<filename>} attiva la sleave mode e invia il file avente nome 					\texttt{filename};
+	\item [\texttt{send}]  seguito dall'argomento \texttt{<filename>} attiva la slave mode e invia il file avente nome 					\texttt{filename};
 	\item [\texttt{setname}] seguito dall'argomento \texttt{<newname>} imposta il nuovo nome utente \texttt{newname};
 	\item [\texttt{getname}] stampa sullo schermo il proprio nome utente.
 \end{description}
@@ -734,8 +734,8 @@ Quindi, per poter utilizzare il risultato di tale chiama, vi è la necessità di
 \chapter{Valutazione e collaudo}
 
 \section{Testing sul campo}
-La fase di sviluppo dell'applicazione è stata un susseguirsi di implementazione e testing delle nuove funzionalità. In particolare, sfruttando il fatto che master e sleave lavorano con socket bindati a porte differenti, è stato possibile testare la piattaforma semplicemente utilizzando in parallelo due shell di comando in cui da una parte si attiva la master mode, mentre dall'altra la sleave mode.\\
-Riportiamo di seguito il risultato dei test principali eseguiti, comprensivi di messaggi utili per la comprensione di quanto l'applicazione sta realmente facendo, a sinistra abbiamo il master, mentre a destra lo sleave:
+La fase di sviluppo dell'applicazione è stata un susseguirsi di implementazione e testing delle nuove funzionalità. In particolare, sfruttando il fatto che master e slave lavorano con socket bindati a porte differenti, è stato possibile testare la piattaforma semplicemente utilizzando in parallelo due shell di comando in cui da una parte si attiva la master mode, mentre dall'altra la slave mode.\\
+Riportiamo di seguito il risultato dei test principali eseguiti, comprensivi di messaggi utili per la comprensione di quanto l'applicazione sta realmente facendo, a sinistra abbiamo il master, mentre a destra lo slave:
 
 \begin{Parallel}{0.5\textwidth}{0.5\textwidth}
 \ParallelLText{
@@ -753,7 +753,7 @@ MacBook-Pro-di-Davide-3:sleave davidetalon$ link --send canzone.mp3
 \ParallelPar
 \end{Parallel}
 
-Mentre dal lato master viene aperto il socket Udp in ascolto per eventuali richieste, dal lato sleave vengono inviati i pacchetti 				broadcast e si stabiliscono i server attivi all'interno della rete, dando la possibilità all'utente di scegliere il destinatario.
+Mentre dal lato master viene aperto il socket Udp in ascolto per eventuali richieste, dal lato slave vengono inviati i pacchetti 				broadcast e si stabiliscono i server attivi all'interno della rete, dando la possibilità all'utente di scegliere il destinatario.
 
 \begin{Parallel}{0.5\textwidth}{0.5\textwidth}
 \ParallelLText{
@@ -780,7 +780,7 @@ Scegliere un master valido:
 \ParallelPar
 \end{Parallel}
 
-Ricevuta la richiesta da parte dello sleave il master attiva il socket TCP e resta in attesa di eventuali connessioni, dall'altra parte lo sleave si connette al master ed invia l'header contenente il proprio username e il nome del file da inviare.
+Ricevuta la richiesta da parte dello slave il master attiva il socket TCP e resta in attesa di eventuali connessioni, dall'altra parte lo slave si connette al master ed invia l'header contenente il proprio username e il nome del file da inviare.
 
 \begin{Parallel}{0.5\textwidth}{0.5\textwidth}
 \ParallelLText{
@@ -867,12 +867,12 @@ canzone.mp3 canzone.mp3.tar.gz
 
 
 \section{Valutazione e bug riscontrati}
-Osservando l'output dei terminali relativi allo sleave e al master è possibile confermare la correttezza dei risultati e verificare il soddisfamento delle specifiche che avevamo prefissato come obiettivo. Tuttavia sono stati riscontrati alcuni bug che compaioni in determinate condizioni:
+Osservando l'output dei terminali relativi allo slave e al master è possibile confermare la correttezza dei risultati e verificare il soddisfamento delle specifiche che avevamo prefissato come obiettivo. Tuttavia sono stati riscontrati alcuni bug che compaioni in determinate condizioni:
 \medskip
 \begin{description}
-	\item[Unrecoverable error]: alcune volte capita che, nel socket UDP dello sleave, la \texttt{recvfrom()} dia "Unrecoverable error" errno = 9 Bad 		file number (motivo non ancora identificato);
+	\item[Unrecoverable error]: alcune volte capita che, nel socket UDP dello slave, la \texttt{recvfrom()} dia "Unrecoverable error" errno = 9 Bad 		file number (motivo non ancora identificato);
 	\item[File name invalid encoding]: nella trasmissione dati da un sistema operativo OS X ad Ubuntu il nome del file assume una codifica non 			valida, tale problema è dovuto alla differente codifica dei caratteri nei due sistemi operativi;
-	\item[Address already in use]: lo sleave tentando di connettersi al server (TCP) utilizza un indirizza già in uso. 
+	\item[Address already in use]: lo slave tentando di connettersi al server (TCP) utilizza un indirizza già in uso. 
 \end{description}
 
 
